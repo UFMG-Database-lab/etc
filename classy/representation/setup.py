@@ -9,7 +9,7 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        main=main:cli
+        main=cli:cli
 
     ''',
 )
