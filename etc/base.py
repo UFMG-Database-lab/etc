@@ -1,6 +1,7 @@
 
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 import numpy as np
+from urllib.parse import urljoin as urllibj
 from glob import glob
 from sklearn.datasets import dump_svmlight_file, load_svmlight_file
 import gzip
@@ -16,6 +17,9 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 WithValFold = namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test', 'X_val', 'y_val'])
 Fold = namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test'])
+
+
+
 
 def dump_svmlight_file_gz(X,y,filename):
     with gzip.open(filename, 'w') as filout:
@@ -56,6 +60,10 @@ def is_jsonable(x):
         return True
     except (TypeError, OverflowError):
         return False
+def urljoin(url, *args):
+    for part in args:
+        url = urllibj(url, part)
+    return url
 class NumpyEncoder(json.JSONEncoder):
     """ Special json encoder for numpy types """
     def default(self, obj):
@@ -106,32 +114,6 @@ class Tokenizer():
         return [ k for k,v in sorted( self.term2ix.items(), key=lambda x: x[1] )]
     def get_term2ix(self):
         return self.term2ix
-class Learnable(BaseEstimator, ClassifierMixin, TransformerMixin):
-    @staticmethod
-    def load(filepath):
-        raise NotImplementedError("Load method not implemented yet!")
-
-    def __init__(self, name_learnable, use_validation=False):
-        super(Learnable, self).__init__()
-        self.name_learnable = name_learnable
-        self.use_validation = use_validation
-
-    def save(self, path_to_save=None, f=None):
-        if path_to_save is not None:
-            create_path(path_to_save)
-        namefile = path.join(path_to_save, f'{self.name_learnable}')
-        if f is not None:
-            namefile = namefile + f'_{f}'
-        with open(namefile, 'wb') as vecfile:
-            pickle.dump(self, vecfile)
-    def fit(self, fold):
-        raise NotImplementedError("Fit method not implemented yet!")
-    def transform(self, X):
-        raise NotImplementedError("Transform method not implemented yet!")
-    def predict(self, X):
-        raise NotImplementedError("Predict method not implemented yet!")
-    def predict_proba(self, X):
-        raise NotImplementedError("Predict probabilities method not implemented yet!")
 class Representation(object):
     def __init__(self, representationpath):
         self.representationpath = representationpath
@@ -158,12 +140,23 @@ class Representation(object):
             raise ValueError(f"Param '{param}' not found!")
         return self.config[param]   
 class Dataset(object):
-    def __init__(self, dataset_path, random_state=42, encoding='utf8'):
+    def __init__(self, dname, dataset_path='~/', repo='http://homepages.dcc.ufmg.br/~vitormangaravite/', random_state=42, encoding='utf8'):
         super(Dataset, self).__init__()
+        self.dname = dname.lower()
+        dataset_path = path.expanduser(dataset_path)
+        self.dataset_path = path.abspath(path.join(dataset_path, '.etc', 'datasets', dname))
+        
+        self.texts_filepath = path.join(self.dataset_path, 'texts.txt')
+        self.score_filepath = path.join(self.dataset_path, 'score.txt')
+        self.splits_path    = path.join(self.dataset_path, 'splits')
+        if repo is not None:
+            repo  =  path.join(repo, '')
+            repo +=  '/'.join(['.etc', 'datasets', dname])
+
+        self.repo = repo
         self.random_state = random_state
         self.encoding = encoding
-        self.dataset_path = path.abspath(dataset_path)
-        self.dname = path.basename(self.dataset_path)
+
         self._load_dataset_()
         self.split = {}
 
@@ -196,7 +189,8 @@ class Dataset(object):
         name_split = str(name_split)
         if name_split not in self.available_splits:
             # Create name_split
-            self.split[name_split] = self._create_splits_( int(name_split) )
+            split = self._download_split_(name_split)
+            self.split[name_split] = split if split is not None else self._create_splits_( int(name_split) )
             self.available_splits.add( name_split )
         if name_split not in self.split:
             # Load name_split
@@ -205,6 +199,14 @@ class Dataset(object):
                 self.split[name_split]  = self._create_val_(self.split[name_split])
                 self._save_split_(name_split, self.split[name_split])
         return self.split[name_split]
+    
+    def _download_split_(self, name_split):
+        split_path = self.splits_path+'/split_%s.csv' % str(name_split)
+        content = self._download_( split_path )
+        if content is not None:
+            save_file(split_path, content)
+            return self._load_splits_(name_split)
+        return None
 
     def _create_splits_(self, k):
         skf = StratifiedKFold(n_splits=k, shuffle=True, random_state=self.random_state)
@@ -254,11 +256,48 @@ class Dataset(object):
                 splits.append( tuple(fold) )
         return splits
 
+
+    def _download_n_save_(self, filepath, url):
+        text = self._download_(url)
+        if text is not None:
+            with open(filepath, 'w', encoding=self.encoding) as fil_out:
+                fil_out.write( text )
+        else:
+            raise Exception("File not found in %s!" % url)
+            
+    def _download_(self, url):
+        import urllib.request
+        from ssl import _create_unverified_context
+        try:
+            context  = _create_unverified_context()
+            response = urllib.request.urlopen(url, context=context)
+            data     = response.read()
+            return data.decode(self.encoding)
+        except:
+            return None
+
     def _load_dataset_(self):
-        self.texts = read_lines(path.join(self.dataset_path, 'texts.txt'))
-        self.y = read_lines(path.join(self.dataset_path, 'score.txt'))
+        if not path.exists(self.dataset_path) or \
+            not path.exists(self.texts_filepath) or \
+            not path.exists(self.score_filepath) or \
+            not path.exists(self.splits_path):
+            
+            if not self.repo:
+                raise Exception('Dataset %s not found!' % self.dname)
+
+            create_path(self.splits_path)
+            
+            if not path.exists(self.texts_filepath):
+                self._download_n_save_( self.texts_filepath, self.repo+'/texts.txt' )
+
+            if not path.exists(self.score_filepath):
+                self._download_n_save_( self.score_filepath, self.repo+'/score.txt' )
+
+
+        self.texts = read_lines(self.texts_filepath)
+        self.y = read_lines(self.score_filepath)
         self.y = list(map(int, self.y))
-        splits_files = glob( path.join(self.dataset_path, 'splits', 'split_*.csv') )
+        splits_files = glob( path.join(self.splits_path, 'split_*.csv') )
         self.available_splits = set(map(lambda x: path.basename(x)[6:-4], splits_files ))
         self.nclass = len(set(self.y))
         self.split = dict()
