@@ -27,13 +27,16 @@ def dump_svmlight_file_gz(X,y,filename):
 def filter_text(text, params=None):
     tfvector = CountVectorizer().build_tokenizer()
     return list( map(' '.join, map(tfvector, text)) )
-def remove_if_exists(filename):
-    if path.exists(filename):
-        remove(filename)
-def save_file(filename, content):
+def remove_if_exists(filename_):
+    if path.exists(filename_):
+        remove(filename_)
+def save_file(filename, content, entire=False):
     with open(filename, 'w') as filout:
-        for line in content:
-            filout.write(line + '\n')
+        if entire:
+            filout.write(content)
+        else:
+            for line in content:
+                filout.write(line + '\n')
 def create_path(path_to_create):
     path_to_create = path.abspath(path_to_create)
     paths = path_to_create.split(path.sep)
@@ -190,7 +193,7 @@ class Dataset(object):
         if name_split not in self.available_splits:
             # Create name_split
             split = self._download_split_(name_split)
-            self.split[name_split] = split if split is not None else self._create_splits_( int(name_split) )
+            self.split[name_split] = split if split is not None else self._create_splits_( int(name_split) ) # If don't exists in the repository, create one
             self.available_splits.add( name_split )
         if name_split not in self.split:
             # Load name_split
@@ -201,10 +204,12 @@ class Dataset(object):
         return self.split[name_split]
     
     def _download_split_(self, name_split):
-        split_path = self.splits_path+'/split_%s.csv' % str(name_split)
+        split_path = urljoin(self.repo, 'splits', f'split_{name_split}.csv')
+        print(split_path)
         content = self._download_( split_path )
         if content is not None:
-            save_file(split_path, content)
+            split_file = path.join(self.dataset_path, 'splits', f'split_{name_split}.csv')
+            save_file(split_file, content, entire=True)
             return self._load_splits_(name_split)
         return None
 
@@ -256,7 +261,6 @@ class Dataset(object):
                 splits.append( tuple(fold) )
         return splits
 
-
     def _download_n_save_(self, filepath, url):
         text = self._download_(url)
         if text is not None:
@@ -274,6 +278,7 @@ class Dataset(object):
             data     = response.read()
             return data.decode(self.encoding)
         except:
+            print('bla')
             return None
 
     def _load_dataset_(self):

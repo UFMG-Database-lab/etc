@@ -10,3 +10,9 @@ importlib
 hyperopt
 nltk
 traceback
+segtok
+networkx
+torchvision
+torch
+matplotlib
+notebook

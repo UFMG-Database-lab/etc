@@ -1,0 +1,11 @@
+segtok
+scipy
+networkx
+numpy
+tqdm
+nltk
+torchvision
+torch
+scikit-learn
+matplotlib
+notebook
