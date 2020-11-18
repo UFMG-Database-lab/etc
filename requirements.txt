@@ -6,13 +6,13 @@ keras
 tensorflow
 fasttext
 numpy
-importlib
+#importlib
 hyperopt
 nltk
-traceback
+#traceback
 segtok
 networkx
 torchvision
 torch
 matplotlib
-notebook
+#notebook
