@@ -19,10 +19,10 @@ PATH_TO_EXEC = path.join(path.dirname(path.relpath(__file__)), 'exec')
 
 LOG_FILE = path.join(PATH_TO_EXEC, 'LOG.txt')
 
-DATA2W = './'+ path.join(PATH_TO_EXEC, 'commands', 'data2w')
-DATA2DL= './'+ path.join(PATH_TO_EXEC, 'commands', 'data2dl')
-PTE= './'+ path.join(PATH_TO_EXEC, 'commands', 'pte')
-INFER= './'+ path.join(PATH_TO_EXEC, 'commands', 'infer')
+DATA2W = 'data2w'  # './'+ path.join(PATH_TO_EXEC, 'commands', 'data2w')
+DATA2DL= 'data2dl' # './'+ path.join(PATH_TO_EXEC, 'commands', 'data2dl')
+PTE= 'pte'         # './'+ path.join(PATH_TO_EXEC, 'commands', 'pte')
+INFER= 'infer'     # './'+ path.join(PATH_TO_EXEC, 'commands', 'infer')
 
 def filter_text(doc):
     doc = doc.lower()

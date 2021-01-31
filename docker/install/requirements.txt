@@ -15,4 +15,5 @@ networkx
 torchvision
 torch
 matplotlib
-#notebook
+notebook
+git+git://github.com/UFMG-Database-lab/etc
