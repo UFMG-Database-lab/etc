@@ -143,7 +143,7 @@ class Representation(object):
             raise ValueError(f"Param '{param}' not found!")
         return self.config[param]   
 class Dataset(object):
-    def __init__(self, dname, dataset_path='~/', repo='http://homepages.dcc.ufmg.br/~vitormangaravite/', random_state=42, encoding='utf8'):
+    def __init__(self, dname, dataset_path='~/', repo='http://hidra.lbd.dcc.ufmg.br/', random_state=42, encoding='utf8'):
         super(Dataset, self).__init__()
         self.dname = dname.lower()
         dataset_path = path.expanduser(dataset_path)
@@ -154,7 +154,7 @@ class Dataset(object):
         self.splits_path    = path.join(self.dataset_path, 'splits')
         if repo is not None:
             repo  =  path.join(repo, '')
-            repo +=  '/'.join(['.etc', 'datasets', dname])
+            repo +=  '/'.join(['datasets', dname])
 
         self.repo = repo
         self.random_state = random_state
