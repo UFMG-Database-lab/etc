@@ -16,9 +16,6 @@ import pickle
 from sklearn.feature_extraction.text import CountVectorizer
 
 WithValFold = namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test', 'X_val', 'y_val'])
-Fold = namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test'])
-
-
 
 
 def dump_svmlight_file_gz(X,y,filename):
@@ -117,6 +114,68 @@ class Tokenizer():
         return [ k for k,v in sorted( self.term2ix.items(), key=lambda x: x[1] )]
     def get_term2ix(self):
         return self.term2ix
+
+class Fold:
+
+    def __len__(self, name_split):
+        splits = Dataset.__getitem__(name_split)
+        return len(splits)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self, name_split, with_val=True):
+        splits = Dataset.__getitem__(name_split)
+        f = 0
+        if f < self.__len__(name_split):
+            fold = self._build_instances_(splits[f], with_val)
+            f += 1
+            return fold
+        else:
+            raise StopIteration
+
+    def __getitem__(self, f, name_split, with_val):
+        splits = self.__next__(name_split, with_val)
+        if f >= self.__len__(name_split):
+            # Fold id not found!
+            raise ValueError(f"Fold idx {f} not found in {name_split} splits.")
+
+        fold = splits[f]
+        return fold
+
+    def _build_instances_(self, split, with_val):
+        train_idx, val_idx, test_idx = split
+
+        # Test values
+        X_test = Dataset.get_array(self.texts, test_idx)
+        y_test = Dataset.get_array(self.y, test_idx)
+
+        if with_val:
+            # Train values
+            X_train = Dataset.get_array(self.texts, train_idx)
+            y_train = Dataset.get_array(self.y, train_idx)
+
+            # Validation values
+            X_val = Dataset.get_array(self.texts, val_idx)
+            y_val = Dataset.get_array(self.y, val_idx)
+
+            fold = WithValFold(X_train, y_train, X_test, y_test, X_val, y_val)
+        else:
+            train_idx = sorted(np.concatenate([train_idx, val_idx]))
+
+            # Train values
+            X_train = Dataset.get_array(self.texts, train_idx)
+            y_train = Dataset.get_array(self.y, train_idx)
+            fold = Fold(X_train, y_train, X_test, y_test)
+
+        return fold
+
+    def fold(self):
+        return namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test'])
+
+
+Fold = Fold.fold()
+
 class Representation(object):
     def __init__(self, representationpath):
         self.representationpath = representationpath
@@ -141,7 +200,8 @@ class Representation(object):
     def get_param(self, param):
         if param not in self.config:
             raise ValueError(f"Param '{param}' not found!")
-        return self.config[param]   
+        return self.config[param]
+
 class Dataset(object):
     def __init__(self, dname, dataset_path='~/', repo='http://hidra.lbd.dcc.ufmg.br/', random_state=42, encoding='utf8'):
         super(Dataset, self).__init__()
@@ -175,18 +235,9 @@ class Dataset(object):
     @staticmethod
     def get_array(X, idxs):
         return [ X[idx] for idx in idxs ]
-        
-    def nfold(self, name_split):
-        splits = self.__getitem__(name_split)
-        return len( splits )
 
     def get_fold(self, f, name_split, with_val=True):
-        splits = self.__getitem__(name_split)
-        if f >= self.nfold(name_split):
-            # Fold id not found!
-            raise ValueError(f"Fold idx {f} not found in {name_split} splits.")
-        fold = self._build_instances_(splits[f], with_val)
-        return fold
+        return Fold.__getitem__(f, name_split, with_val)
     
     def __getitem__(self, name_split):
         name_split = str(name_split)
@@ -306,7 +357,7 @@ class Dataset(object):
         self.available_splits = set(map(lambda x: path.basename(x)[6:-4], splits_files ))
         self.nclass = len(set(self.y))
         self.split = dict()
-    
+
     def _build_instances_(self, split, with_val):
         train_idx, val_idx, test_idx = split
 
