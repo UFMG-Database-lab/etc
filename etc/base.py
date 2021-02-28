@@ -143,6 +143,7 @@ class Fold:
         fold = splits[f]
         return fold
 
+    # TODO remover codigo duplicado
     def _build_instances_(self, split, with_val):
         train_idx, val_idx, test_idx = split
 
@@ -170,7 +171,8 @@ class Fold:
 
         return fold
 
-    def fold(self):
+    @staticmethod
+    def fold():
         return namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test'])
 
 
