@@ -115,32 +115,34 @@ class Tokenizer():
     def get_term2ix(self):
         return self.term2ix
 
-class Fold:
+class Fold():
+    def __init__(self, splits, with_val):
+        self.f = 0
+        self.splits = splits
+        self.with_val = with_val
+        self.fold = namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test'])
 
-    def __len__(self, name_split):
-        splits = Dataset.__getitem__(name_split)
-        return len(splits)
+    def __len__(self):
+        return len(self.splits)
 
     def __iter__(self):
         return self
 
-    def __next__(self, name_split, with_val=True):
-        splits = Dataset.__getitem__(name_split)
-        f = 0
-        if f < self.__len__(name_split):
-            fold = self._build_instances_(splits[f], with_val)
-            f += 1
+    def __next__(self):
+        if self.f < self.__len__():
+            fold = self._build_instances_(self.splits[self.f], self.with_val)
+            self.f += 1
             return fold
         else:
             raise StopIteration
 
-    def __getitem__(self, f, name_split, with_val):
-        splits = self.__next__(name_split, with_val)
-        if f >= self.__len__(name_split):
+    def __getitem__(self, f, name_split):
+        if f >= self.__len__():
             # Fold id not found!
             raise ValueError(f"Fold idx {f} not found in {name_split} splits.")
 
-        fold = splits[f]
+        fold = self.splits[name_split[f]]
+               # self.splits[f]
         return fold
 
     # TODO remover codigo duplicado
@@ -171,12 +173,8 @@ class Fold:
 
         return fold
 
-    @staticmethod
-    def fold():
-        return namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test'])
-
-
-Fold = Fold.fold()
+#Todo como criar esse cara?
+# Fold = Fold.fold()
 
 class Representation(object):
     def __init__(self, representationpath):
@@ -238,8 +236,8 @@ class Dataset(object):
     def get_array(X, idxs):
         return [ X[idx] for idx in idxs ]
 
-    def get_fold(self, f, name_split, with_val=True):
-        return Fold.__getitem__(f, name_split, with_val)
+    # def get_fold(self, f, name_split, with_val=True):
+    #     return Fold.__getitem__(f, name_split, with_val)
     
     def __getitem__(self, name_split):
         name_split = str(name_split)
