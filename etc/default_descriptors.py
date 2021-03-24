@@ -6,7 +6,7 @@ import numpy as np
 default_cls = {
     'fasttext': {
         'classpath': 'methods.fasttext.FastTextSupervised',
-        'init_params': { 'loss': 'hs', 'epoch': 1 }, 
+        'init_params': { 'loss': 'hs', 'epoch': 100 }, 
         'name_params': [ 'loss', 'epoch', 'lr' ]
     },
     'lstm': {

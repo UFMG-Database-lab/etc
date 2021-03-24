@@ -15,7 +15,8 @@ from os import path, mkdir, remove
 import pickle
 from sklearn.feature_extraction.text import CountVectorizer
 
-WithValFold = namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test', 'X_val', 'y_val'])
+WithValFold = namedtuple('WithValFold', ['X_train', 'y_train', 'X_test', 'y_test', 'X_val', 'y_val'])
+Fold = namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test'])
 
 
 def dump_svmlight_file_gz(X,y,filename):
@@ -64,6 +65,9 @@ def urljoin(url, *args):
     for part in args:
         url = urllibj(url, part)
     return url
+def get_array(X, idxs):
+    return [ X[idx] for idx in idxs ]
+
 class NumpyEncoder(json.JSONEncoder):
     """ Special json encoder for numpy types """
     def default(self, obj):
@@ -115,12 +119,14 @@ class Tokenizer():
     def get_term2ix(self):
         return self.term2ix
 
-class Fold():
-    def __init__(self, splits, with_val):
+class FoldIter():
+    def __init__(self, splits, texts, y, with_val):
         self.f = 0
         self.splits = splits
         self.with_val = with_val
-        self.fold = namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test'])
+        self.texts = texts
+        self.y = y
+        # = namedtuple('Fold', ['X_train', 'y_train', 'X_test', 'y_test']) # pra q era isso?
 
     def __len__(self):
         return len(self.splits)
@@ -130,51 +136,49 @@ class Fold():
 
     def __next__(self):
         if self.f < self.__len__():
-            fold = self._build_instances_(self.splits[self.f], self.with_val)
+            fold = self._build_instances_(self.splits[self.f])
             self.f += 1
             return fold
         else:
             raise StopIteration
 
-    def __getitem__(self, f, name_split):
+    def __getitem__(self, f):
         if f >= self.__len__():
             # Fold id not found!
-            raise ValueError(f"Fold idx {f} not found in {name_split} splits.")
+            raise ValueError(f"Fold idx {f} not found.")
 
-        fold = self.splits[name_split[f]]
+        fold = self._build_instances_(self.splits[f])
                # self.splits[f]
         return fold
 
     # TODO remover codigo duplicado
-    def _build_instances_(self, split, with_val):
+    def _build_instances_(self, split):
         train_idx, val_idx, test_idx = split
 
         # Test values
-        X_test = Dataset.get_array(self.texts, test_idx)
-        y_test = Dataset.get_array(self.y, test_idx)
+        X_test = get_array(self.texts, test_idx)
+        y_test = get_array(self.y, test_idx)
 
-        if with_val:
+        if self.with_val:
             # Train values
-            X_train = Dataset.get_array(self.texts, train_idx)
-            y_train = Dataset.get_array(self.y, train_idx)
+            X_train = get_array(self.texts, train_idx)
+            y_train = get_array(self.y, train_idx)
 
             # Validation values
-            X_val = Dataset.get_array(self.texts, val_idx)
-            y_val = Dataset.get_array(self.y, val_idx)
+            X_val = get_array(self.texts, val_idx)
+            y_val = get_array(self.y, val_idx)
 
             fold = WithValFold(X_train, y_train, X_test, y_test, X_val, y_val)
         else:
             train_idx = sorted(np.concatenate([train_idx, val_idx]))
 
             # Train values
-            X_train = Dataset.get_array(self.texts, train_idx)
-            y_train = Dataset.get_array(self.y, train_idx)
+            X_train = get_array(self.texts, train_idx)
+            y_train = get_array(self.y, train_idx)
             fold = Fold(X_train, y_train, X_test, y_test)
 
         return fold
 
-#Todo como criar esse cara?
-# Fold = Fold.fold()
 
 class Representation(object):
     def __init__(self, representationpath):
@@ -232,12 +236,11 @@ class Dataset(object):
     def ndocs(self):
         return len(self.y)
 
-    @staticmethod
-    def get_array(X, idxs):
-        return [ X[idx] for idx in idxs ]
+    def nfold(self, name_split):
+        return len(self.__getitem__(name_split))
 
-    # def get_fold(self, f, name_split, with_val=True):
-    #     return Fold.__getitem__(f, name_split, with_val)
+    def get_folds(self, name_split, with_val=True):
+        return FoldIter(self.__getitem__(name_split), self.texts, self.y, with_val=with_val)
     
     def __getitem__(self, name_split):
         name_split = str(name_split)
@@ -277,7 +280,7 @@ class Dataset(object):
             try:
                 train_idx_atual, val_idx_atual = train_test_split(train_ids,
                                                 test_size=len(test_ids),
-                                                stratify=Dataset.get_array(self.y, train_ids),
+                                                stratify=get_array(self.y, train_ids),
                                                 random_state=self.random_state)
             except ValueError:
                 train_idx_atual, val_idx_atual = train_test_split(train_ids,
@@ -357,30 +360,3 @@ class Dataset(object):
         self.available_splits = set(map(lambda x: path.basename(x)[6:-4], splits_files ))
         self.nclass = len(set(self.y))
         self.split = dict()
-
-    def _build_instances_(self, split, with_val):
-        train_idx, val_idx, test_idx = split
-
-        # Test values
-        X_test  = Dataset.get_array( self.texts, test_idx )
-        y_test  = Dataset.get_array( self.y, test_idx )
-
-        if with_val:
-            # Train values
-            X_train = Dataset.get_array( self.texts, train_idx )
-            y_train = Dataset.get_array( self.y, train_idx )
-
-            # Validation values
-            X_val   = Dataset.get_array( self.texts, val_idx )
-            y_val   = Dataset.get_array( self.y, val_idx )
-
-            fold = WithValFold( X_train, y_train, X_test, y_test, X_val, y_val )
-        else:
-            train_idx = sorted(np.concatenate([train_idx, val_idx]))
-
-            # Train values
-            X_train = Dataset.get_array( self.texts, train_idx )
-            y_train = Dataset.get_array( self.y, train_idx )
-            fold = Fold( X_train, y_train, X_test, y_test )
-            
-        return fold

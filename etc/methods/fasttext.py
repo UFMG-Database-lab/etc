@@ -12,6 +12,7 @@ class FastTextSupervised(BaseEstimator, ClassifierMixin, TransformerMixin):
                         wordNgrams=1, loss='softmax', bucket=2000000, n_jobs=cpu_count(),
                         lrUpdateRate=100, t=0.0001, label='__label__', verbose=0):
         #super().__init__( "FastText_Supervised", use_validation=False )
+        self.use_validation = False
 
         self.TMP_IN_TRAIN_FILE = '/tmp/train_fasttext_in_'+str(datetime.now())
 

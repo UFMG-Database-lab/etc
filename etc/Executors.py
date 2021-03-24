@@ -77,7 +77,7 @@ class ExecutorE2E(object):
             self.config['e2e'] = {} 
 
             self.config['e2e']['classpath'] = self.classpath
-            self.config['e2e']['name_e2e'] = self.e2e.name_e2e
+            #self.config['e2e']['name_e2e'] = self.e2e.name_e2e
             self.config['e2e']['with_val'] = self.e2e.use_validation
             self.config['e2e']['name_method'] = self.name_method
             self.config['e2e']['save_model'] = self.save_model
@@ -115,8 +115,10 @@ class ExecutorE2E(object):
         else:
             force_run = [ f for f in range(self.nfolds) if self.config['e2e']['status'][f] != "DONE" ]
         
+        
+        cv = self.dataset.get_folds(self.name_fold, with_val=self.e2e.use_validation)
         for f in tqdm(force_run, desc=f"Running on folds ({self.dataset.dname})", disable=self.silence, position=2):
-            fold = self.dataset.get_fold(f, self.name_fold, with_val=self.e2e.use_validation)
+            fold = cv[f]
             try:
                 del self.e2e
 
@@ -131,13 +133,14 @@ class ExecutorE2E(object):
                     result = self.hyperparam_search.run(self.e2e, fold)
                     self.config['e2e']['time_hyperparam_search'][f] = time() - t_measure
 
-                    self.e2e.set_params( **result.best_params )
+                    self.e2e = result.best_model
                     self.config['e2e']['best_params'][f] = self.e2e.get_params()
                     self.config['e2e']['all_searched_params'][f] = result.all_results
+                else:
+                    t_measure = time()
+                    self.e2e.fit(fold.X_train, fold.y_train )
+                    self.config['e2e']['time_fit'][f] = time() - t_measure
 
-                t_measure = time()
-                self.e2e.fit(fold)
-                self.config['e2e']['time_fit'][f] = time() - t_measure
                 self.config['e2e']['time_train'][f] = time() - t_train
 
                 t_measure = time()
