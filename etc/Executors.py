@@ -20,7 +20,8 @@ def get_name(learnable, name_params, name_learnable=None):
 
 class ExecutorE2E(object):
     def __init__(self, dataset, output_path, method_descriptor, name_fold,
-                    hyperparam_search=None, save_model=False, predict_proba=False, force=None, silence=False):
+                    hyperparam_search=None, save_model=False, with_val=True,
+                    predict_proba=False, force=None, silence=False):
         self.type_executor = 'e2e'
 
         if isinstance(dataset, str) and path.exists(dataset):
@@ -31,11 +32,10 @@ class ExecutorE2E(object):
         self.save_model = save_model
         self.predict_proba = predict_proba
         self.name_fold = name_fold
+        self.with_val = with_val
         self.nfolds = self.dataset.nfold(self.name_fold)
         self.hyperparam_search = hyperparam_search
         self.silence = silence
-
-        self.force = force
 
         self.init_params =  {}
         if 'init_params' in method_descriptor:
@@ -57,6 +57,14 @@ class ExecutorE2E(object):
         create_path(self.output_path)
 
         self.load_or_create_configuration()
+
+        if force:
+            if force == 'all':
+                self.force = [ f for f in range(self.nfolds) ]
+            else:
+                self.force = force 
+        else:
+            self.force = [ f for f in range(self.nfolds) if self.config['e2e']['status'][f] != "DONE" ]
     
     def __str__(self):
         return f'<E2E ({self.name_method})>'
@@ -78,7 +86,7 @@ class ExecutorE2E(object):
 
             self.config['e2e']['classpath'] = self.classpath
             #self.config['e2e']['name_e2e'] = self.e2e.name_e2e
-            self.config['e2e']['with_val'] = self.e2e.use_validation
+            self.config['e2e']['with_val'] = self.with_val
             self.config['e2e']['name_method'] = self.name_method
             self.config['e2e']['save_model'] = self.save_model
             self.config['e2e']['creation_date'] = str(datetime.now())
@@ -94,7 +102,7 @@ class ExecutorE2E(object):
 
             self.config['e2e']['status'] = ["TODO"] * self.nfolds
 
-            if self.e2e.use_validation:
+            if self.with_val:
                 self.config['e2e']['y_pred_val'] = [None] * self.nfolds
                 self.config['e2e']['y_true_val'] = [None] * self.nfolds
             if self.predict_proba:
@@ -107,17 +115,8 @@ class ExecutorE2E(object):
             self.save_config()
 
     def run(self):
-        if self.force is not None:
-            if self.force == 'all':
-                force_run = [ f for f in range(self.nfolds) ]
-            else:
-                force_run = self.force
-        else:
-            force_run = [ f for f in range(self.nfolds) if self.config['e2e']['status'][f] != "DONE" ]
-        
-        
-        cv = self.dataset.get_folds(self.name_fold, with_val=self.e2e.use_validation)
-        for f in tqdm(force_run, desc=f"Running on folds ({self.dataset.dname})", disable=self.silence, position=2):
+        cv = self.dataset.get_folds(self.name_fold, with_val=self.with_val)
+        for f in tqdm(self.force, desc=f"Running on folds ({self.dataset.dname})", disable=self.silence, position=2):
             fold = cv[f]
             try:
                 del self.e2e
