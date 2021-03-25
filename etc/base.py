@@ -81,6 +81,7 @@ class NumpyEncoder(json.JSONEncoder):
         elif isinstance(obj,(np.ndarray,)):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
+
 class Tokenizer():
     def __init__(self, vectorizer=None, maxlen=None, **kwargs):
         self.term2ix = { 'END': 0 }
@@ -170,7 +171,7 @@ class FoldIter():
 
             fold = WithValFold(X_train, y_train, X_test, y_test, X_val, y_val)
         else:
-            train_idx = sorted(np.concatenate([train_idx, val_idx]))
+            train_idx = np.concatenate([train_idx, val_idx])
 
             # Train values
             X_train = get_array(self.texts, train_idx)
@@ -178,7 +179,6 @@ class FoldIter():
             fold = Fold(X_train, y_train, X_test, y_test)
 
         return fold
-
 
 class Representation(object):
     def __init__(self, representationpath):
@@ -211,7 +211,7 @@ class Dataset(object):
         super(Dataset, self).__init__()
         self.dname = dname.lower()
         dataset_path = path.expanduser(dataset_path)
-        self.dataset_path = path.abspath(path.join(dataset_path, '.etc', 'datasets', dname))
+        self.dataset_path = path.abspath(path.join(dataset_path, 'etc', 'datasets', dname))
         
         self.texts_filepath = path.join(self.dataset_path, 'texts.txt')
         self.score_filepath = path.join(self.dataset_path, 'score.txt')
@@ -252,14 +252,15 @@ class Dataset(object):
         if name_split not in self.split:
             # Load name_split
             self.split[name_split] = self._load_splits_(name_split)
-            if len(self.split[name_split][0]) != 3:
-                self.split[name_split]  = self._create_val_(self.split[name_split])
-                self._save_split_(name_split, self.split[name_split])
+            for i in range(len(self.split[name_split])):
+                if len(self.split[name_split][i]) != 3:
+                    self.split[name_split]  = self._create_val_(self.split[name_split])
+                    self._save_split_(name_split, self.split[name_split])
         return self.split[name_split]
     
     def _download_split_(self, name_split):
-        split_path = urljoin(self.repo, 'splits', f'split_{name_split}.csv')
-        print(split_path)
+        split_path = path.join(self.repo, 'splits', f'split_{name_split}.csv')
+        print(self.repo,split_path)
         content = self._download_( split_path )
         if content is not None:
             split_file = path.join(self.dataset_path, 'splits', f'split_{name_split}.csv')
@@ -317,7 +318,7 @@ class Dataset(object):
 
     def _download_n_save_(self, filepath, url):
         text = self._download_(url)
-        if text is not None:
+        if text:
             with open(filepath, 'w', encoding=self.encoding) as fil_out:
                 fil_out.write( text )
         else:
