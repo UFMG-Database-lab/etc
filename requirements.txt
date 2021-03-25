@@ -16,3 +16,4 @@ torchvision
 torch
 matplotlib
 #notebook
+pandas
