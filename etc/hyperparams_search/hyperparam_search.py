@@ -6,6 +6,8 @@ from sklearn.base import clone
 import numpy as np
 
 
+
+
 class HyperparamResult(object):
     def __init__(self, name_method, best_params, all_results={}):
         self.name_method = name_method
@@ -30,7 +32,7 @@ class GridSearchHyperparamSearch(HyperparamSearch):
         self.clf = GridSearchCV(estimator=classifier, param_grid=self.parameters,
                             scoring=self.scoring, n_jobs=self.njobs, cv=self.cv)
         self.clf.fit(fold.X_train, fold.y_train)
-        result = HyperparamResult(self.name_method, self.clf.best_params_)
+        result = HyperparamResult(self.name_method, self.clf.best_params_, all_results=self.clf.cv_results_)
         return result
 
 class RandomSearchHyperparamSearch(HyperparamSearch):
@@ -46,7 +48,7 @@ class RandomSearchHyperparamSearch(HyperparamSearch):
         self.clf = RandomizedSearchCV(estimator=classifier, param_distributions=self.parameters,
                             scoring=self.scoring, n_jobs=self.njobs, cv=self.cv, n_iter=self.n_iter)
         self.clf.fit(fold.X_train, fold.y_train)
-        result = HyperparamResult(self.name_method, self.clf.best_params_)
+        result = HyperparamResult(self.name_method, self.clf.best_params_, all_results=self.clf.cv_results_)
         
         return result
 

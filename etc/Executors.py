@@ -65,6 +65,7 @@ class ExecutorE2E(object):
                 self.force = force 
         else:
             self.force = [ f for f in range(self.nfolds) if self.config['e2e']['status'][f] != "DONE" ]
+
     
     def __str__(self):
         return f'<E2E ({self.name_method})>'
@@ -137,7 +138,10 @@ class ExecutorE2E(object):
                     self.config['e2e']['all_searched_params'][f] = result.all_results
                 else:
                     t_measure = time()
-                    self.e2e.fit(fold.X_train, fold.y_train )
+                    if self.with_val and 'X_val' in fold._fields and 'y_val' in fold._fields :
+                        self.e2e.fit(fold.X_train, fold.y_train, fold.X_val, fold.y_val )
+                    else:
+                        self.e2e.fit(fold.X_train, fold.y_train )
                     self.config['e2e']['time_fit'][f] = time() - t_measure
 
                 self.config['e2e']['time_train'][f] = time() - t_train
@@ -149,7 +153,7 @@ class ExecutorE2E(object):
                 self.config['e2e']['y_pred_test'][f] = y_pred
                 self.config['e2e']['y_true_test'][f] = fold.y_test
 
-                if self.e2e.use_validation:
+                if self.with_val:
                     self.config['e2e']['y_pred_val'][f] = self.e2e.predict( fold.X_val )
                     self.config['e2e']['y_true_val'][f] = fold.y_val
 

@@ -10,7 +10,7 @@ GPUID = 0
 os.environ['CUDA_VISIBLE_DEVICES'] = str(GPUID)
 
 import tensorflow as tf
-from tensorflow.contrib import learn
+#from tensorflow.contrib import learn
 from tensorflow.contrib import layers
 # from tensorflow.contrib import metrics
 # from tensorflow.contrib.learn import monitors
@@ -249,7 +249,7 @@ class SWEM(BaseEstimator, ClassifierMixin, TransformerMixin):
             if self.fix_emb:  #####################    #####################################################################################
                 ###################################    #####################################################################################
                 ################  use pre-trained word-embedding as W  #####################################################################
-                ################  adjust  #####################################################################
+                ################  ajust  #####################################################################
                 ###################################    #####################################################################################
                 ###################################    #####################################################################################
                 assert (hasattr(self, 'W_emb'))

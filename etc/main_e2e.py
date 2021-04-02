@@ -35,12 +35,15 @@ if __name__ == '__main__':
 
     print(args)
 
-    for datasetpath in tqdm(args.dataset, desc="Running on datasets", disable=args.silence, position=1):
-        dataset_obj = Dataset(datasetpath, random_state=args.seed, encoding=args.encoding)
+    for dname in tqdm(args.dataset, desc="Running on datasets", disable=args.silence, position=1):
+        dataset_obj = Dataset(dname, random_state=args.seed, encoding=args.encoding)
         for method_descriptor in args.input_method:
             if method_descriptor in default_cls:
                 method = default_cls[method_descriptor]
+            else:
+                raise e
+            with_val =  ( 'with_val' in method and method['with_val'] ) or 'with_val' not in method
             executor = ExecutorE2E( dataset_obj, args.output, method, args.nfolds,
-                hyperparam_search=None, save_model=args.save_model,
+                hyperparam_search=None, save_model=args.save_model, with_val=with_val,
                 predict_proba=args.predict_proba, force=args.force, silence=args.silence )
             executor.run()
