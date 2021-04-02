@@ -9,9 +9,9 @@ class LSTMClassifier(BaseEstimator, ClassifierMixin, TransformerMixin, tf.keras.
 
     def __init__(self, vocabulary_size=50000, sequence_size=256, hidden_size=300,
                 learning_rate=0.001, patience=10, epochs=100, batch_size=16,
-                embedding_size=300, dropout=.2, dropout_lstm=.2, dropout_rec=.2):
+                dropout=.2, dropout_lstm=.2, dropout_rec=.2, device='/cpu:0'):
 
-        super().__init__( "LSTM", use_validation=True )
+        super().__init__()
 
         self.vocabulary_size = vocabulary_size
         self.hidden_size = hidden_size
@@ -23,6 +23,7 @@ class LSTMClassifier(BaseEstimator, ClassifierMixin, TransformerMixin, tf.keras.
         self.dropout = dropout
         self.dropout_lstm = dropout_lstm
         self.dropout_rec = dropout_rec
+        self.device = device
 
         self.tokenizer = tf.keras.preprocessing.text.Tokenizer(self.vocabulary_size, filters='!"#$%&()*+,-./:;<=>?@[\]^_`{|}~', lower=True)
 
@@ -43,25 +44,26 @@ class LSTMClassifier(BaseEstimator, ClassifierMixin, TransformerMixin, tf.keras.
         y_val   = self.to_categorical(y_val, train=False)
 
         # model definition
-        self.model = tf.keras.Sequential([
-            tf.keras.layers.Embedding(self.vocabulary_size, self.hidden_size),
-            tf.keras.layers.Dropout(self.dropout),
-            tf.keras.layers.LSTM(self.hidden_size, dropout=self.dropout_lstm, recurrent_dropout=self.dropout_rec),
-            tf.keras.layers.Dense(self.n_class, activation='softmax'),
-        ])
+        with tf.device(self.device):
+            self.model = tf.keras.Sequential([
+                tf.keras.layers.Embedding(self.vocabulary_size, self.hidden_size),
+                tf.keras.layers.Dropout(self.dropout),
+                tf.keras.layers.LSTM(self.hidden_size, dropout=self.dropout_lstm, recurrent_dropout=self.dropout_rec),
+                tf.keras.layers.Dense(self.n_class, activation='softmax'),
+            ])
+            print(dir(self.model))
+            # configures the model for training
+            self.model.compile(loss='categorical_crossentropy',
+                            optimizer=tf.keras.optimizers.Adam(self.learning_rate),
+                            metrics=['accuracy'])
 
-        # configures the model for training
-        self.model.compile(loss='categorical_crossentropy',
-                           optimizer=tf.keras.optimizers.Adam(self.learning_rate),
-                           metrics=['accuracy'])
-
-        self.model.fit(x=X_train,
-                        y=y_train,
-                        epochs=self.epochs,
-                        batch_size=self.batch_size,
-                        validation_data=(X_val, y_val),
-                        callbacks=self.get_callbacks()
-                        )
+            self.model.fit(x=X_train,
+                            y=y_train,
+                            epochs=self.epochs,
+                            batch_size=self.batch_size,
+                            validation_data=(X_val, y_val),
+                            callbacks=self.get_callbacks()
+                            )
         return self
 
     def predict(self, X_test):

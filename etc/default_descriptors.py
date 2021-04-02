@@ -5,6 +5,7 @@ import numpy as np
 
 default_cls = {
     'fasttext': {
+        'with_val': False,
         'classpath': 'methods.fasttext.FastTextSupervised',
         'init_params': { 'loss': 'hs', 'epoch': 100 }, 
         'name_params': [ 'loss', 'epoch', 'lr' ]
@@ -15,6 +16,7 @@ default_cls = {
         'name_params': [ 'patience', 'epochs', 'batch_size' ]
     },
     'swem': {
+        'with_val': True,
         'classpath': 'methods.swem.SWEM',
         'init_params': { 'max_epochs': 1 }, 
         'name_params': [ 'max_epochs', 'pacience' ]
@@ -36,6 +38,7 @@ default_repr = {
         'name_params': [ "min_df","stopwords" ]
     },
     'fasttext': {
+        'with_val': False,
         'classpath': 'methods.fasttext.FastTextSupervised',
         'init_params': { 'loss': 'hs', 'epoch': 1 }, 
         'name_params': [ 'loss', 'epoch', 'lr' ]
