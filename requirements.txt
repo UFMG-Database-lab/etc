@@ -2,8 +2,10 @@ Click==7.0
 tqdm
 scikit-learn
 scipy
+tensorflow>=2.1.0
+tensorflow-gpu
 keras
-tensorflow
+#keras-gpu
 fasttext
 numpy
 #importlib
