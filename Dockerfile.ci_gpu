@@ -28,6 +28,10 @@ COPY requirements.txt /install/requirements.txt
 COPY docker/install/install_requirements.sh /install/install_requirements.sh
 RUN bash /install/install_requirements.sh
 
+#fasttext
+COPY docker/install/install_fasttext.sh /install/install_fasttext.sh
+RUN bash /install/install_fasttext.sh
+
 # Environment variables
 ENV PATH=/usr/local/nvidia/bin:${PATH}
 ENV PATH=/usr/local/cuda/bin:${PATH}
