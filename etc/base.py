@@ -143,11 +143,11 @@ class Representation(object):
             raise ValueError(f"Param '{param}' not found!")
         return self.config[param]   
 class Dataset(object):
-    def __init__(self, dname, dataset_path='~/', repo='http://hidra.lbd.dcc.ufmg.br/', random_state=42, encoding='utf8'):
+    def __init__(self, dname, dataset_path='~/.etc/datasets', repo='http://150.164.2.44/', random_state=42, encoding='utf8'):
         super(Dataset, self).__init__()
         self.dname = dname.lower()
         dataset_path = path.expanduser(dataset_path)
-        self.dataset_path = path.abspath(path.join(dataset_path, '.etc', 'datasets', dname))
+        self.dataset_path = path.abspath(path.join(dataset_path, dname))
         
         self.texts_filepath = path.join(self.dataset_path, 'texts.txt')
         self.score_filepath = path.join(self.dataset_path, 'score.txt')
