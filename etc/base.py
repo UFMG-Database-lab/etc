@@ -203,8 +203,7 @@ class Dataset(object):
         return self.split[name_split]
     
     def _download_split_(self, name_split):
-        split_path = urljoin(self.repo, 'splits')
-        split_path = urljoin(split_path, f'split_{name_split}.csv')
+        split_path = self.repo + f'/splits/split_{name_split}.csv'
         print(split_path)
         content = self._download_( split_path )
         if content is not None:
