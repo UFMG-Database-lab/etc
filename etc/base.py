@@ -197,9 +197,9 @@ class Dataset(object):
         if name_split not in self.split:
             # Load name_split
             self.split[name_split] = self._load_splits_(name_split)
-            if len(self.split[name_split][0]) != 3:
-                self.split[name_split]  = self._create_val_(self.split[name_split])
-                self._save_split_(name_split, self.split[name_split])
+        if len(self.split[name_split][0]) != 3:
+            self.split[name_split]  = self._create_val_(self.split[name_split])
+            self._save_split_(name_split, self.split[name_split])
         return self.split[name_split]
     
     def _download_split_(self, name_split):
