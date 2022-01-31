@@ -6,8 +6,8 @@ from time import time
 from os import path
 import numpy as np
 import traceback
-from base import create_path, save_json, load_json, Representation
-from base import Dataset, dump_svmlight_file_gz, is_jsonable
+from .base import create_path, save_json, load_json, Representation
+from .base import Dataset, dump_svmlight_file_gz, is_jsonable
 
 def get_name(learnable, name_params, name_learnable=None):
     name = name_learnable
@@ -19,8 +19,8 @@ def get_name(learnable, name_params, name_learnable=None):
     return name
 
 class ExecutorE2E(object):
-    def __init__(self, dataset, output_path, method_descriptor, name_fold,
-                    with_val=True, hyperparam_search=None,
+    def __init__(self, dataset, method_descriptor, name_fold=10,
+                    output_path='/tmp/.etc/', with_val=True, hyperparam_search=None,
                     save_model=False, predict_proba=False, force=None, silence=False):
         self.type_executor = 'e2e'
 
