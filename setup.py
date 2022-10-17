@@ -7,12 +7,12 @@ with open('requirements.txt', 'r') as f:
 		] if s != ''
 	]
 
-setup(name='etc-ml',
-	version='0.1.1',
-	description='etc project',
+setup(name='netc',
+	version='0.2.0',
+	description='Next Environment for Text Classification project',
 	url='https://github.com/UFMG-Database-lab/etc',
 	author='Vitor Mangaravite' 'Cecilia Nascimento',
 	license='MIT',
-	packages=['etc'],
+	packages=['netc'],
 	zip_safe=False,
 	install_requires=install_reqs)
