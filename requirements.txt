@@ -50,7 +50,7 @@ rsa~=4.9
 s3transfer~=0.6.0
 sacremoses~=0.0.53
 scikit-learn~=0.24.2
-scipy~=1.9.1
+scipy
 six~=1.16.0
 tensorboard~=2.10.1
 tensorboard-data-server~=0.6.1
