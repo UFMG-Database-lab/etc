@@ -1,5 +1,7 @@
 
 
+from typing import Any
+
 class Result(object):
     def __init__(self) -> None:
         pass

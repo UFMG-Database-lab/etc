@@ -6,5 +6,3 @@ from .methods import *
 from .metrics import *
 from .trainers import *
 from .utils import *
-
-from .main import *
