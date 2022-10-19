@@ -42,14 +42,17 @@ class Trainect(object):
             if model is not None:
                 self.save_model(output_path, model)
     def done(self, output_path):
-        result_path = path.join(output_path, 'result.json')
-        if not path.exists(result_path):
+        try:
+            result_path = path.join(output_path, 'result.json')
+            if not path.exists(result_path):
+                return False
+            result = load_json(result_path)
+            m = 'r_eval' in result and  \
+                'status' in result['r_eval'] and \
+                result['r_eval']['status'] == 'DONE'
+            return m 
+        except:
             return False
-        result = load_json(result_path)
-        m = 'r_eval' in result and  \
-            'status' in result['r_eval'] and \
-            result['r_eval']['status'] == 'DONE'
-        return m 
     def train_model(self, model, fold):
         raise NotImplementedError('Abstraction')      
     def run(self, fold: Fold, output_dir: str = None, save_model:bool=False, force:bool=False):
@@ -57,7 +60,6 @@ class Trainect(object):
         if self.done(output_dir) and not force:
             return model
         try:
-
             self.t_eval['init'].tick
             model = self.init_model(fold, output_dir)
             self.t_eval['init'].tick
