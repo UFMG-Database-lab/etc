@@ -22,10 +22,13 @@ class Trainect(object):
         return model.predict(X)
     def load_model(self, output_path):
         import pickle
-        return pickle.load(output_path)
+        with open(path.join(output_path, 'model.pkl'), 'rb') as fl:
+            model = pickle.load(fl)
+        return model
     def save_model(self, output_path, model):
         import pickle
-        pickle.dump(model, open(path.join(output_path, 'model.pkl'), 'wb'))
+        with open(path.join(output_path, 'model.pkl'), 'wb') as fl:
+            pickle.dump(model, fl)
     def save(self, output_path, model=None):
         result = {
             'tname': self.tname,
@@ -78,6 +81,8 @@ class Trainect(object):
             self.r_eval['test.pred'] = self.predict(model, fold.X_test)
             self.t_eval['test.pred'].tick
             self.r_eval['test.true'] = fold.y_test
+
+            print(  )
 
             self.r_eval['status'] = 'DONE'
         except KeyError as error:

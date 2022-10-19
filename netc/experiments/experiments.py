@@ -23,12 +23,10 @@ class Experiment(object):
             create_path(path.join(self.output_path, dst.dname))
 
     def run(self):
-        for (dst, desc) in tqdm(product(self.datasets, self.trnr_descs), total=self.N, desc=f"Experimenting...", position=4):
-            with tqdm(total=dst.n, position=3) as pbar:
+        for dst in tqdm(self.datasets, desc=f"Dataset...", position=4):
+            for desc in tqdm(self.trnr_descs, desc=f"Method...", position=3):
                 for fold in dst:
                     seed_everything(self.seed)
                     trnr = from_descriptor(desc)
-                    pbar.desc = f"Training {dst.dname}/{trnr.tname}"
                     foutput_path = path.join(self.output_path, dst.dname, trnr.tname, f"fold-{fold.foldname}", str(fold.fold_idx))
                     trnr.run( fold, foutput_path, save_model = self.save_model, force = self.force )
-                    pbar.update(1)
