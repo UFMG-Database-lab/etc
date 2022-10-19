@@ -57,7 +57,6 @@ tensorboard-data-server~=0.6.1
 tensorboard-plugin-wit~=1.8.1
 threadpoolctl~=3.1.0
 tokenizers~=0.12.1
-torch~=1.12.1
 torchmetrics~=0.4.1
 torchvision~=0.13.1
 tqdm~=4.64.1
@@ -67,3 +66,5 @@ urllib3~=1.26.12
 Werkzeug~=2.2.2
 xxhash~=3.0.0
 yarl~=1.8.1
+--extra-index-url https://download.pytorch.org/whl/cu116
+torch~=1.12.1

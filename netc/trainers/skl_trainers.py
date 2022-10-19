@@ -29,4 +29,5 @@ class CVSklTrainer(SklTrainer):
         if fold.with_val:
             X += fold.X_val
             y += fold.y_val
-        return model.fit(X, y)
+        model.fit(X, y)
+        return { 'best_params': model.best_params_,  'cv': model.cv_results_ }

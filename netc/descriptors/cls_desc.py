@@ -90,7 +90,7 @@ gridtfidfsvm = {
                         'gridparams': {
                             'cv': 3,
                             'n_jobs': -1,
-                            'verbose': 10
+                            'verbose': 4
                         }
                     },
         },
@@ -112,7 +112,7 @@ gridftfidfsvm = {
                         'gridparams': {
                             'cv': 3,
                             'n_jobs': -1,
-                            'verbose': 10
+                            'verbose': 4
                         }
                     },
         },
