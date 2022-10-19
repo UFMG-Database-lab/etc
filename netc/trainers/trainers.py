@@ -6,6 +6,7 @@ from os import path
 from collections import defaultdict
 from ..metrics.tick import Tick
 import traceback
+from sklearn.metrics import f1_score
 
 
 class Trainect(object):
@@ -84,7 +85,10 @@ class Trainect(object):
             self.t_eval['test.pred'].tick
             self.r_eval['test.true'] = fold.y_test
 
-            print(  )
+            f_mi = f1_score(self.r_eval['test.true'], self.r_eval['test.pred'], average='micro')
+            f_ma = f1_score(self.r_eval['test.true'], self.r_eval['test.pred'], average='macro')
+
+            print( fold.dname, self.tname, f"{fold.fold_idx}/{fold.foldname}", f_mi, f_ma )
 
             self.r_eval['status'] = 'DONE'
         except KeyError as error:
