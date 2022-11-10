@@ -121,7 +121,7 @@ normNFC = lambda text: normalize('NFC', text)
 
 class Tokenizer(BaseEstimator, TransformerMixin):
     def __init__(self, mindf=2, lan='english', stopwordsSet='nltk', model='topk',
-                 vocab_max_size=99999999999, ngram_range=(1,2), oversample=False, size_sample=6, verbose=False):
+                 vocab_max_size=500000, ngram_range=(1,2), oversample=False, size_sample=0, verbose=False):
         super(Tokenizer, self).__init__()
         self.oversample = oversample
         self.size_sample = size_sample

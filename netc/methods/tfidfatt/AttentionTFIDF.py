@@ -18,8 +18,8 @@ from .Similarities import SimMatrix, DistMatrix
 from ...metrics.tick import Tick
 
 class AttentionTFIDF(nn.Module):
-    def __init__(self, vocab_size: int, hiddens: int, nclass: int, maxF: int=20, drop: float = .5,
-                 alpha: float = 0.25, gamma: float = 3., reduction: str = 'sum', negative_slope=9.,
+    def __init__(self, vocab_size: int, nclass: int, hiddens: int=300, maxF: int=20, drop: float = .5,
+                 alpha: float = 0.25, gamma: float = 3., reduction: str = 'sum', 
                 att_model: str ='AA', sim_func='dist', norep=2):
         super(AttentionTFIDF, self).__init__()
         #self.fc        = nn.Linear(hiddens, nclass+1)
