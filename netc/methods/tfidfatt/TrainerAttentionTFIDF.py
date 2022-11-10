@@ -10,7 +10,7 @@ class TrainerAttentionTFIDF(Trainect):
         self.t_eval['train.tknz'].tick
 
         self.t_eval['train.model'].tick
-        results_ = model.train(fold)
+        results_ = model.fit( X_train=fold.X_train, y_train=fold.y_train, X_val=fold.X_val, y_val=fold.y_val)
         self.t_eval['train.model'].tick
 
         return results_

@@ -12,10 +12,10 @@ DESC_DST = {
     'reut90': { "nfold": 10, "dname": "reut90" },
     'acm': {  "nfold": 10, "dname": "acm" },
 
-
+    'ohsumed': {  "nfold": 10, "dname": "ohsumed" },
+    'wos11967': { "nfold":10, "dname": "wos11967" },
     'yelp_reviews': { "nfold": 10, "dname": "yelp_review_2L" },
     'vadermovie': { "nfold": 10, "dname": "vader_movie_2L" },
-    #'sst2': { "nfold": 10, "dname": "sst2" },
     'dblp': { "nfold": 10, "dname": "dblp" },
     'aisopos_ntua': { "nfold": 10, "dname": "aisopos_ntua_2L" },
     'books': { "nfold": 10, "dname": "books" }
