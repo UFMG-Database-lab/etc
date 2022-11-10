@@ -132,9 +132,9 @@ bert_skl_desc = {
 
 tfidfatt = {
     'classpath': 'netc.methods.tfidfatt.TrainerAttentionTFIDF.TrainerAttentionTFIDF',
-    'init_params': { 'tname': 'AttTFIDF',
+    'init_params': { 'tname': 'NAttTFIDF',
                      'descriptor': {
-                        'classpath': 'netc.methods.tfidfatt.AttentionTFIDF.AttentionTFIDFClassifier',
+                        'classpath': 'netc.methods.tfidfatt.AttentionTFIDF.AttTFIDFClassifier',
                         'init_params': { }
                       }
                     }
