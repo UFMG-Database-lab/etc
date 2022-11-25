@@ -116,8 +116,7 @@ def preprocessor(text):
         text = re.sub(pattern, replace, text)
     text = text.lower()
     return text
-from unicodedata import normalize
-normNFC = lambda text: normalize('NFC', text)
+from unicodedata import normalize as UNI_NORMALIZE
 
 class Tokenizer(BaseEstimator, TransformerMixin):
     def __init__(self, mindf=2, lan='english', stopwordsSet='nltk', model='topk',
@@ -196,8 +195,10 @@ class Tokenizer(BaseEstimator, TransformerMixin):
 
         result = { 'doc_tids':  doc_tids, 'TFs': TFs, 'DFs': DFs }
         return result
+    def normalize(self, doc):
+        return UNI_NORMALIZE('NFC', doc)
     def analyzer_doc(self, doc):
-        doc = normNFC(doc)
+        doc = self.normalize('NFC', doc)
         return self.local_analyzer(doc)
     def fit(self, X, y):
         self.N           = len(X)
