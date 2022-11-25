@@ -198,7 +198,7 @@ class Tokenizer(BaseEstimator, TransformerMixin):
     def normalize(self, doc):
         return UNI_NORMALIZE('NFC', doc)
     def analyzer_doc(self, doc):
-        doc = self.normalize('NFC', doc)
+        doc = self.normalize(doc)
         return self.local_analyzer(doc)
     def fit(self, X, y):
         self.N           = len(X)
