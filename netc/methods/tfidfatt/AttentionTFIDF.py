@@ -7,6 +7,7 @@ from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 import copy
+from numpy import ceil
 
 from sklearn.base import BaseEstimator
 from collections import defaultdict
@@ -154,82 +155,84 @@ class AttTFIDFClassifier(BaseEstimator):
         counter = 1
         dl_val = DataLoader(list(zip(X_val, y_val)), batch_size=self.batch_size,
                                 shuffle=False, collate_fn=self.tknz.collate_val)
+        with tqdm(total=self.nepochs, position=3, desc="First epoch") as e_pbar:
+            for e in range(self.nepochs):
+                dl_train = DataLoader(list(zip(enumerate(X_train), y_train)),
+                                        batch_size=self.batch_size, shuffle=True,
+                                        collate_fn=self.tknz.collate_train)
+                with tqdm(total=len(y_train)+len(y_val), position=4, smoothing=0., desc=f"V-ACC={best_acc:.3} L={best:.6} E={e+1}") as b_pbar:
+                    loss_train  = 0.
+                    total = 0.
+                    correct  = 0.
+                    self.model.train()
+                    y_true = []
+                    y_preds = []
+                    for i, data in enumerate(dl_train):
+                        data = { k: v.to(self.device) for (k,v) in data.items() }
+                        data.pop('didxs')
 
-        for e in tqdm(range(self.nepochs), total=self.nepochs):
-            dl_train = DataLoader(list(zip(enumerate(X_train), y_train)), batch_size=self.batch_size, shuffle=True, collate_fn=self.tknz.collate_train)
-            with tqdm(total=len(y_train)+len(y_val), smoothing=0., desc=f"V-ACC={best_acc:.3} L={best:.6} E={e+1}") as pbar:
-                loss_train  = 0.
-                total = 0.
-                correct  = 0.
-                self.model.train()
-                y_true = []
-                y_preds = []
-                for i, data in enumerate(dl_train):
-                    data = { k: v.to(self.device) for (k,v) in data.items() }
-                    data.pop('didxs')
+                        result = self.model( **data )
+                        loss   = result['loss']
 
-                    result = self.model( **data )
-                    loss   = result['loss']
+                        self.optimizer.zero_grad()
+                        loss.backward()
+                        self.optimizer.step()
 
-                    self.optimizer.zero_grad()
-                    loss.backward()
-                    self.optimizer.step()
+                        loss_train    += result['loss'].item()
 
-                    loss_train    += result['loss'].item()
+                        y_pred         = result['logits'].argmax(axis=-1)
+                        correct       += (y_pred == data['labels']).sum().item()
+                        total         += len(data['labels'])
 
-                    y_pred         = result['logits'].argmax(axis=-1)
-                    correct       += (y_pred == data['labels']).sum().item()
-                    total         += len(data['labels'])
+                        y_true.extend(list(data['labels'].cpu()))
+                        y_preds.extend(list(y_pred.cpu()))
 
-                    y_true.extend(list(data['labels'].cpu()))
-                    y_preds.extend(list(y_pred.cpu()))
+                        self.model.drop_.p  = (correct/total)*self.max_drop
+                        b_pbar.desc = f"--ACC: {(correct/total):.3} L={(loss_train/(i+1)):.6} iter={i+1}"
+                        b_pbar.update( len(data['labels']) )
+                        del result, data
 
-                    self.model.drop_.p  = (correct/total)*self.max_drop
-                    print(f"t-ACC: {(correct/total):.3} Drp: {self.model.drop_.p:.3} L={(loss_train/(i+1)):.6} iter={i+1}", end=f"{ ''.join([' ']*100) }\r")
-                    pbar.update( len(data['labels']) )
-                    del result, data
+                    f1_ma = f1_score(y_true, y_preds, average='macro')*100.
+                    f1_mi = f1_score(y_true, y_preds, average='micro')*100.
+                    b_pbar.desc = f"t-F1: ({f1_mi:.3}/{f1_ma:.3}) L={(loss_train/(i+1)):.6}"
+                    loss_train = loss_train/(i+1)
+                    total = 0.
+                    correct  = 0.
+                    loss_val = 0.
+                    self.model.eval()
+                    y_true  = []
+                    y_preds = [] 
+                    for i, data in enumerate(dl_val):
+                        data = { k: v.to(self.device) for (k,v) in data.items() }
+                        result = self.model( **data )
 
-                f1_ma = f1_score(y_true, y_preds, average='macro')*100.
-                f1_mi = f1_score(y_true, y_preds, average='micro')*100.
-                print(f"--F1: ({f1_mi:.3}/{f1_ma:.3}) Drp: {self.model.drop_.p:.3} L={(loss_train/(i+1)):.6}{ ''.join([' ']*100) }")
-                loss_train = loss_train/(i+1)
-                total = 0.
-                correct  = 0.
-                loss_val = 0.
-                self.model.eval()
-                y_true  = []
-                y_preds = [] 
-                for i, data in enumerate(dl_val):
-                    data = { k: v.to(self.device) for (k,v) in data.items() }
-                    result = self.model( **data )
+                        loss_val   += result['loss'].item()
+                        y_pred      = result['logits'].argmax(axis=-1)
+                        correct    += (y_pred == data['labels']).sum().item()
+                        total      += len(data['labels'])
+                        b_pbar.update( len(data['labels']) )
 
-                    loss_val   += result['loss'].item()
-                    y_pred      = result['logits'].argmax(axis=-1)
-                    correct    += (y_pred == data['labels']).sum().item()
-                    total      += len(data['labels'])
-                    pbar.update( len(data['labels']) )
+                        y_true.extend(list(data['labels'].cpu()))
+                        y_preds.extend(list(y_pred.cpu()))
 
-                    y_true.extend(list(data['labels'].cpu()))
-                    y_preds.extend(list(y_pred.cpu()))
+                        del result, data
+                    f1_ma  = f1_score(y_true, y_preds, average='macro')
+                    f1_mi  = f1_score(y_true, y_preds, average='micro')
+                    metric = (loss_val/(i+1)) / ( f1_ma + f1_mi )
+                    e_pbar.desc = f"v-F1: ({(f1_mi*100.):.3}/{(f1_ma*100.):.3}) L={(loss_val/(i+1)):.6} M={metric:.5}"
+                    self.scheduler.step(loss_val)
 
-                    del result, data
-                f1_ma = f1_score(y_true, y_preds, average='macro')
-                f1_mi = f1_score(y_true, y_preds, average='micro')
-                print(f"v-F1: ({(f1_mi*100.):.3}/{(f1_ma*100.):.3}) L={(loss_val/(i+1)):.6} M=", end="")
-                loss_val   = (loss_val/(i+1)) / ( f1_ma + f1_mi )
-                print(f"{loss_val:.5}")
-                self.scheduler.step(loss_val)
-
-                if best-loss_val > 0.0001 :
-                    best = loss_val
-                    counter = 1
-                    best_acc = correct/total
-                    best_model = copy.deepcopy(self.model).to('cpu')
-                    print('*')
-                elif counter > 10:
-                    break
-                else:
-                    counter += 1
+                    if best-metric > 0.0001 :
+                        best = metric
+                        counter = 1
+                        best_acc = correct/total
+                        best_model = copy.deepcopy(self.model).to('cpu')
+                        e_pbar.desc = f"*-F1: ({(f1_mi*100.):.3}/{(f1_ma*100.):.3}) L={(loss_val/(i+1)):.6} M={metric:.5}"
+                    elif counter > 10:
+                        break
+                    else:
+                        counter += 1
+                e_pbar.update(1)
         self.model = best_model.to(self.device)
         return statatistics_
         

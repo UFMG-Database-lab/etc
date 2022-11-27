@@ -211,7 +211,7 @@ class Tokenizer(BaseEstimator, TransformerMixin):
         
         with Pool(processes=64) as p:
             for didx,doc_in_terms in tqdm(enumerate(p.imap(self.analyzer_doc, X)),
-                                           total=self.N, disable=not self.verbose):
+                                           total=self.N, desc="Fit tokenizer", disable=not self.verbose):
                 counter = Counter(list(map( self._filter_fit_, list(doc_in_terms) )))
                 sizes.append(len(counter))
                 docs_in_tids.extend( [ (tf,didx,term)
