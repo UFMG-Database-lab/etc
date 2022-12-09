@@ -162,11 +162,46 @@ tfidfatt = {
 
 }
 
+pte = {
+    'classpath': 'netc.trainers.skl_trainers.CVSklTrainer',
+    'init_params': {
+        'tname': 'PTE-LR',
+        'descriptor': { 'skmodel': { 
+                                    'type': 'skl-pipe',
+                                    'pipeline': [
+                                        {'classpath': 'netc.methods.PTE.PTEWrapper.PTEVectorizer', 'init_params': {  } }, 
+                                        {'classpath': 'sklearn.linear_model.LogisticRegression',   'init_params': {  } }
+                                    ]
+                        },
+                        'hyperparams': {
+                            'logisticregression__C': np.logspace(-4, 4, 50),
+                            'logisticregression__penalty': ['none', 'l2']
+                        },
+                        'gridparams': {
+                            'cv': 3,
+                            'n_jobs': -1,
+                            'verbose': 4
+                        }
+                    },
+        },
+
+}
+fasttext = {
+    'classpath': 'netc.trainers.skl_trainers.SklTrainer',
+    'init_params': { 'tname': 'FastText_Sup',
+                     'descriptor': {'classpath': 'netc.methods.fasttext.FastTextSKL',
+                                    'init_params': { } }
+                    }
+    
+}
+
 DESC_CLS = {
     'gridftfidfsvm': gridftfidfsvm,
     'gridtfidfsvm': gridtfidfsvm, 
     'tfidfsvm': tfidfsvm, 
     'bert': bert,
+    'pte': pte,
+    'fasttext': fasttext,
     'bert-tiny': bert_tiny,
     'bert-skl': bert_skl_desc,
     'tfidfatt': tfidfatt
