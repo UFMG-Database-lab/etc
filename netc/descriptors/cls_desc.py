@@ -130,6 +130,38 @@ bert_skl_desc = {
                     }
 }
 
+etc_desc = {
+    'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
+    'init_params': { 'tname': 'EnsembleTC',
+                     'descriptor': {
+                        'classpath': 'netc.methods.ETCClassifier.ETCClassifier',
+                        'init_params': {
+                            'tknz': { 
+                                    'mindf': 2,
+                                    'stopwordsSet': 'both',
+                                    'model': 'topk',
+                                    'oversample': False, 
+                                    'vocab_max_size': 500000,
+                                    'ngram_range': (1,2),
+                                    'verbose': True
+                                },
+                            'model': { 
+                                "gamma": 3.,
+                                "hiddens": 300,
+                                'att_model': 'AA'
+                            },
+                            'device': 'cuda',
+                            'batch_size': 16,
+                            'nepochs': 50,
+                            'lr': 5e-3,
+                            'weight_decay': 5e-3,
+                            'max_drop': .75
+                         }
+                      }
+                    }
+
+}
+
 tfidfatt = {
     'classpath': 'netc.methods.tfidfatt.TrainerAttentionTFIDF.TrainerAttentionTFIDF',
     'init_params': { 'tname': 'NAttTFIDF',
@@ -201,6 +233,7 @@ DESC_CLS = {
     'tfidfsvm': tfidfsvm, 
     'bert': bert,
     'pte': pte,
+    'etc': etc_desc,
     'fasttext': fasttext,
     'bert-tiny': bert_tiny,
     'bert-skl': bert_skl_desc,

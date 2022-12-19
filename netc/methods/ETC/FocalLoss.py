@@ -12,14 +12,12 @@ class FocalLoss(nn.Module):
         assert logits.size(0) == len(labels), "Batch with diff sizes"
         assert logits.size(1) > labels.max(), "labels with wrong label"
         
-        # src.index_put_(((torch.ones(index.size(0)).cumsum(0) - 1).long(), index), torch.ones_like(index))
         index1 = labels.long()
         index0 = (torch.ones_like(labels).cumsum(0) - 1).long()
         values = torch.ones_like(labels).float()
         
-        target         = torch.zeros_like(logits).float()
-        target         = target.index_put_((index0, index1), values)
-        #target[labels] = 1.
-        #print(logits.shape, labels.shape, target.shape)
+        target = torch.zeros_like(logits).float()
+        target = target.index_put_((index0, index1), values)
         
-        return sigmoid_focal_loss(logits, target, alpha=self.alpha, gamma=self.gamma, reduction=self.reduction)
+        return sigmoid_focal_loss(logits, target, alpha=self.alpha,
+                                     gamma=self.gamma, reduction=self.reduction)

@@ -1,8 +1,9 @@
-from ...trainers.trainers import Trainect
 
-class TrainerAttentionTFIDF(Trainect):
+from .trainers import Trainect
+
+class TrainerETC(Trainect):
     def __init__(self, tname, descriptor):
-        super(TrainerAttentionTFIDF, self).__init__(tname, descriptor)
+        super(TrainerETC, self).__init__(tname, descriptor)
 
     def train_model(self, model, fold):
         self.t_eval['train.tknz'].tick
