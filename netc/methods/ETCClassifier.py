@@ -115,7 +115,7 @@ class ETCClassifier(BaseEstimator):
                     f1_ma  = f1_score(y_true, y_preds, average='macro')
                     f1_mi  = f1_score(y_true, y_preds, average='micro')
                     metric = (loss_val/(i+1)) / ( f1_ma + f1_mi )
-                    e_pbar.desc = f"v-F1: ({(f1_mi*100.):.3}/{(f1_ma*100.):.3}) L={(loss_val/(i+1)):.6} M={metric:.5}"
+                    #e_pbar.desc = f"v-F1: ({(f1_mi*100.):.3}/{(f1_ma*100.):.3}) L={(loss_val/(i+1)):.6} M={metric:.5}"
                     self.scheduler.step(loss_val)
 
                     if best-metric > 0.0001 :
