@@ -22,4 +22,4 @@ class DistMatrix(nn.Module):
         self.eps = eps
         
     def forward(self, a, b):
-        return self.bias / ( torch.cdist(a, b) + self.bias + self.eps )
+        return ( self.bias + self.eps ) / ( torch.cdist(a, b) + self.bias + self.eps )

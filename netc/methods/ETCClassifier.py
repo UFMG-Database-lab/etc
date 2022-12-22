@@ -52,11 +52,12 @@ class ETCClassifier(BaseEstimator):
         dl_val = DataLoader(list(zip(X_val, y_val)), batch_size=self.batch_size,
                                 shuffle=False, collate_fn=self.tknz.collate_val)
         with tqdm(total=self.nepochs, position=3, desc="First epoch") as e_pbar:
-            for e in range(self.nepochs):
-                dl_train = DataLoader(list(zip(enumerate(X_train), y_train)),
-                                        batch_size=self.batch_size, shuffle=True,
-                                        collate_fn=self.tknz.collate_train)
-                with tqdm(total=len(y_train)+len(y_val), position=4, smoothing=0., desc=f"V-ACC={best_acc:.3} L={best:.6} E={e+1}") as b_pbar:
+            with tqdm(total=len(y_train)+len(y_val), position=4, smoothing=0., desc=f"First batch") as b_pbar:
+                b_pbar.reset(total=len(y_train)+len(y_val))
+                for e in range(self.nepochs):
+                    dl_train = DataLoader(list(zip(enumerate(X_train), y_train)),
+                                            batch_size=self.batch_size, shuffle=True,
+                                            collate_fn=self.tknz.collate_train)
                     loss_train  = 0.
                     total = 0.
                     correct  = 0.
@@ -84,7 +85,7 @@ class ETCClassifier(BaseEstimator):
                         y_preds.extend(list(y_pred.cpu()))
 
                         self.model.drop_.p  = (correct/total)*self.max_drop
-                        b_pbar.desc = f"--ACC: {(correct/total):.3} L={(loss_train/(i+1)):.6} iter={i+1}"
+                        b_pbar.desc = f"--ACC: {(correct/total):.3} L={(loss_train/(i+1)):.6} b={i+1}"
                         b_pbar.update( len(data['labels']) )
                         del result, data
 
@@ -115,7 +116,6 @@ class ETCClassifier(BaseEstimator):
                     f1_ma  = f1_score(y_true, y_preds, average='macro')
                     f1_mi  = f1_score(y_true, y_preds, average='micro')
                     metric = (loss_val/(i+1)) / ( f1_ma + f1_mi )
-                    #e_pbar.desc = f"v-F1: ({(f1_mi*100.):.3}/{(f1_ma*100.):.3}) L={(loss_val/(i+1)):.6} M={metric:.5}"
                     self.scheduler.step(loss_val)
 
                     if best-metric > 0.0001 :
@@ -123,12 +123,14 @@ class ETCClassifier(BaseEstimator):
                         counter = 1
                         best_acc = correct/total
                         best_model = copy.deepcopy(self.model).to('cpu')
-                        e_pbar.desc = f"*-F1: ({(f1_mi*100.):.3}/{(f1_ma*100.):.3}) L={(loss_val/(i+1)):.6} M={metric:.5}"
+                        b_pbar.desc = f"*-F1: ({(f1_mi*100.):.3}/{(f1_ma*100.):.3}) L={(loss_val/(i+1)):.6} M={metric:.5}"
+                        e_pbar.desc = f"v-F1: ({(f1_mi*100.):.3}/{(f1_ma*100.):.3}) L={(loss_val/(i+1)):.6} M={metric:.5}"
                     elif counter > 10:
                         break
                     else:
                         counter += 1
-                e_pbar.update(1)
+                    e_pbar.update(1)
+                    b_pbar.update(-(len(y_train)+len(y_val)))
         self.model = best_model.to(self.device)
         return statatistics_
         
@@ -142,3 +144,6 @@ class ETCClassifier(BaseEstimator):
                 result = self.model( **data )
                 y_preds.extend(result['logits'].argmax(axis=-1).long().cpu().tolist())
         return self.tknz.le.inverse_transform(y_preds)
+
+
+    # implement a BatchNorm1dCDF class cdf of Normal distribution (torch.nn.distributions.Normal) considering the running_mean and running_var and as registered buffer

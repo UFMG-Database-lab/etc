@@ -42,7 +42,6 @@ class nearAttention(nn.Module):
         co_weights = removeNaN(co_weights)               # fill(cW:[B,H,L,L'], NaN)
         
         return { 'co_weights': co_weights, 'bx_packed': bx_packed, 'V': V } # 
-
 class EnsembleTC(nn.Module):
     def __init__(self, drop, hiddens: int, nclass:int, norep:int = 2, nheads: int=6, dev: bool=False):
         super(EnsembleTC, self).__init__()
@@ -51,8 +50,6 @@ class EnsembleTC(nn.Module):
         self.C    = nclass
         self.P    = norep
         self._dev = dev
-        self.norm = nn.BatchNorm1d(self.H)
-        self.posterior = nn.Sequential( nn.Linear(self.H, 2), nn.Softmax(dim=-1) )
         self.fc   = nn.Sequential( nn.Linear(self.D, self.C+self.P), nn.Softmax(dim=-1))
         
     def catHiddens(self, hidd):
@@ -66,11 +63,12 @@ class EnsembleTC(nn.Module):
         
         # weights (w)
         weights = co_weights.sum(axis=-2)                # sum(cW:[B,H,(L),L], -2) -> w:[B,H,L]
-        weights = self.norm(weights).transpose(1,2)      # batchNorm(w:[B,H,L]).T -> w:[B,L,H]
-        weights = self.posterior(weights)                # P(w:[B,L,H]|C) -> w:[B,L,2]
-        weights = weights[:,:,0].squeeze(-1)             # w:[B,L,2] -> w:[B,L,1] -> w:[B,L]
-        weights = removeNaN(weights)                     # fill(w:[B,L,1], NaN)
-        weights[bx_packed] = float('-inf')               # fill(w:[B,L,1], packed)
+        #weights = self.norm(weights)                     # batchNorm(w:[B,H,L]) -> w:[B,H,L]
+        #weights = weights.transpose(1,2)                 # w:[B,H,L] -> w:[B,L,H]
+        weights = weights.mean(dim=-2)                   # mean(w:[B,H,L]) -> w:[B,L]
+        doc_sizes = bx_packed.logical_not().sum().unsqueeze(-1)
+        weights = weights / doc_sizes
+        weights[bx_packed] = float('-inf')               # fill(w:[B,L], packed)
         weights = torch.softmax(weights, dim=-1)         # softmax(w:[B,L]) -> w:[B,L]
         weights = removeNaN(weights).unsqueeze(-1)       # fill(w:[B,L], NaN) -> w:[B,L] -> w:[B,L,1]
         
@@ -88,7 +86,6 @@ class EnsembleTC(nn.Module):
             returing['old_V_lgts'] = old_V_lgts
         
         return returing
-
 class ETCModel(nn.Module):
     def __init__(self, vocab_size: int, hiddens: int, nclass: int, maxF: int=20, nheads: int=6,
                  alpha: float = 0.25, gamma: float = 3., reduction: str = 'sum', drop: float = .5,
