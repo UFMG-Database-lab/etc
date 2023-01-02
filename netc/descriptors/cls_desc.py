@@ -236,24 +236,24 @@ transf_hugg = {
                      }
                     }
 }
-from copy import copy
-bert_hugg = copy(transf_hugg)
+from copy import deepcopy
+bert_hugg = deepcopy(transf_hugg)
 bert_hugg['init_params']['tname'] = 'bert-hugg-base'
 bert_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'bert'
 
-albert_hugg = copy(transf_hugg)
+albert_hugg = deepcopy(transf_hugg)
 albert_hugg['init_params']['tname'] = 'albert-hugg-base'
 albert_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'albert'
 
-roberta_hugg = copy(transf_hugg)
+roberta_hugg = deepcopy(transf_hugg)
 roberta_hugg['init_params']['tname'] = 'roberta-hugg-base'
 roberta_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'roberta'
 
-xlnet_hugg = copy(transf_hugg)
+xlnet_hugg = deepcopy(transf_hugg)
 xlnet_hugg['init_params']['tname'] = 'xlnet-hugg-base'
 xlnet_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'xlnet'
 
-distilbert_hugg = copy(transf_hugg)
+distilbert_hugg = deepcopy(transf_hugg)
 distilbert_hugg['init_params']['tname'] = 'distilbert-hugg-base'
 distilbert_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'distilbert'
 
