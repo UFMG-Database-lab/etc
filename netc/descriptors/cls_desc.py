@@ -229,28 +229,33 @@ fasttext = {
 
 transf_hugg = {
     'classpath': 'netc.trainers.skl_trainers.SklTrainer',
-    'init_params': { 'tname': 'BERT-SKL',
+    'init_params': { 'tname': 'hugging',
                      'descriptor': { 
                         'classpath': 'netc.methods.TransformBased.DeepClassifier.DeepClassifier',
-                        'init_params': {'batch_num': 256, 'max_len':192, 'epochs':5}
+                        'init_params': {'batch_num': 16, 'max_len':192, 'epochs':5}
                      }
                     }
 }
 from copy import copy
 bert_hugg = copy(transf_hugg)
-bert_hugg["deepmethod"] = 'bert'
+bert_hugg['init_params']['tname'] = 'bert-hugg-base'
+bert_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'bert'
 
 albert_hugg = copy(transf_hugg)
-albert_hugg["deepmethod"] = 'albert'
+albert_hugg['init_params']['tname'] = 'albert-hugg-base'
+albert_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'albert'
 
 roberta_hugg = copy(transf_hugg)
-roberta_hugg["deepmethod"] = 'roberta'
+roberta_hugg['init_params']['tname'] = 'roberta-hugg-base'
+roberta_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'roberta'
 
 xlnet_hugg = copy(transf_hugg)
-xlnet_hugg["deepmethod"] = 'xlnet'
+xlnet_hugg['init_params']['tname'] = 'xlnet-hugg-base'
+xlnet_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'xlnet'
 
 distilbert_hugg = copy(transf_hugg)
-distilbert_hugg["deepmethod"] = 'distilbert'
+distilbert_hugg['init_params']['tname'] = 'distilbert-hugg-base'
+distilbert_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'distilbert'
 
 DESC_CLS = {
     'gridftfidfsvm': gridftfidfsvm,
