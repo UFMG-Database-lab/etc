@@ -227,6 +227,31 @@ fasttext = {
     
 }
 
+transf_hugg = {
+    'classpath': 'netc.trainers.skl_trainers.SklTrainer',
+    'init_params': { 'tname': 'BERT-SKL',
+                     'descriptor': { 
+                        'classpath': 'netc.methods.TransformBased.DeepClassifier.DeepClassifier',
+                        'init_params': {'batch_num': 256, 'max_len':192, 'epochs':5}
+                     }
+                    }
+}
+from copy import copy
+bert_hugg = copy(transf_hugg)
+bert_hugg["deepmethod"] = 'bert'
+
+albert_hugg = copy(transf_hugg)
+albert_hugg["deepmethod"] = 'albert'
+
+roberta_hugg = copy(transf_hugg)
+roberta_hugg["deepmethod"] = 'roberta'
+
+xlnet_hugg = copy(transf_hugg)
+xlnet_hugg["deepmethod"] = 'xlnet'
+
+distilbert_hugg = copy(transf_hugg)
+distilbert_hugg["deepmethod"] = 'distilbert'
+
 DESC_CLS = {
     'gridftfidfsvm': gridftfidfsvm,
     'gridtfidfsvm': gridtfidfsvm, 
@@ -237,5 +262,11 @@ DESC_CLS = {
     'fasttext': fasttext,
     'bert-tiny': bert_tiny,
     'bert-skl': bert_skl_desc,
-    'tfidfatt': tfidfatt
+    'tfidfatt': tfidfatt,
+
+    "hbert": bert_hugg,
+    "halbert": albert_hugg,
+    "hroberta": roberta_hugg,
+    "hxlnet": xlnet_hugg,
+    "hdistilbert": distilbert_hugg,
 }
