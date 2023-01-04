@@ -84,6 +84,7 @@ class EnsembleTC(nn.Module):
         returing = { 'logits': logits, 'V_logits': V_lgts, 'V': V }
         if self._dev:
             returing['old_V_lgts'] = old_V_lgts
+            returing['weights'] = weights
         
         return returing
 class ETCModel(nn.Module):
@@ -105,9 +106,9 @@ class ETCModel(nn.Module):
         self.loss_ = FocalLoss(gamma=gamma, alpha=alpha, reduction=reduction)
     
     def forward(self, doc_tids, TFs, DFs, labels=None):
-        
         emb  = self.emb_(doc_tids, TFs, DFs) 
         att  = self.nAtt_(**emb)
+        self.etc_._dev = self._dev
         ensb = self.etc_(**att)
         
         result = { 't_probs': ensb['V_logits'], 'logits': ensb['logits'], 'V': ensb['V']}
@@ -116,7 +117,7 @@ class ETCModel(nn.Module):
         if self._dev:
             result['old_V'] = emb['V']
             result['co_weights'] = att['co_weights']
-            result['weights'] = att['weights']
+            result['weights'] = ensb['weights']
             result['old_V_lgts'] = ensb['old_V_lgts']
         
         return result
