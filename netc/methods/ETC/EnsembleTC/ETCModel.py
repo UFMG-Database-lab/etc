@@ -9,39 +9,6 @@ def removeNaN(data):
     zeros   = torch.zeros_like(data)
     isnan   = torch.isnan(data)
     return torch.where(isnan, zeros, data)
-
-class nearAttention(nn.Module):
-    def __init__(self, hiddens: int, nheads: int=6):
-        super(nearAttention, self).__init__()
-        self.H = nheads
-        self.D = hiddens
-        self.d = hiddens // nheads
-        self.dist_func = DistMatrix()
-        self.norm     = nn.BatchNorm1d(self.H)
-        
-    def getHidden(self, hidd):
-        B,L,_ = hidd.shape
-        hidd  = hidd.view( B, L, self.H, self.d )
-        hidd  = hidd.transpose(1,2)
-        return hidd
-    def forward(self, Q, K, V, pad_mask, bx_packed, **kargs):
-        Q = self.getHidden(Q) # Q:[B,L,D] -> Q:[B,H,L,d]
-        K = self.getHidden(K) # K:[B,L,D] -> K:[B,H,L,d]
-        V = self.getHidden(V) # V:[B,L,D] -> V:[B,H,L,d]
-        
-        B,H,L,_ = Q.shape
-        pad_mask = pad_mask.unsqueeze(1).repeat([1, H, 1, 1]).logical_not() # pm:[B, L, L] -> pm:[B, H, L, L]
-        
-        # co_weights (cW)
-        co_weights = self.dist_func( K, Q )              # SIMILARITY(Q:[B,H,L,D//H], Q:[B,H,L,D//H]) -> cW:[B,H,L,L] 
-        co_weights = co_weights.reshape(B,H,L*L)         # cW:[B,H,L,L] -> cW:[B,H,L*L]
-        co_weights = self.norm(co_weights)               # batchNorm(cW:[B,H,L*L]) -> cW:[B,H,L*L]
-        co_weights = co_weights.reshape(B,H,L,L)         # cW:[B,H,L*L] -> cW:[B,H,L,L]
-        co_weights[pad_mask] = 0.                        # fill(cW:[B,H,L,L], pad)
-        co_weights = torch.softmax(co_weights, dim=-1)   # softmax(cW:[B, H, L, L]) -> cW:[B, H, L, L']
-        co_weights = removeNaN(co_weights)               # fill(cW:[B,H,L,L'], NaN)
-        
-        return { 'co_weights': co_weights, 'bx_packed': bx_packed, 'V': V } # 
 class EnsembleTC(nn.Module):
     def __init__(self, drop, hiddens: int, nclass:int, norep:int = 2, nheads: int=6, dev: bool=False):
         super(EnsembleTC, self).__init__()
@@ -87,6 +54,45 @@ class EnsembleTC(nn.Module):
             returing['weights'] = weights
         
         return returing
+
+class nearAttention(nn.Module):
+    def __init__(self, hiddens: int, nheads: int=6):
+        super(nearAttention, self).__init__()
+        self.H = nheads
+        self.D = hiddens
+        self.d = hiddens // nheads
+        self.dist_func = DistMatrix()
+        self.V_norm    = nn.BatchNorm2d(self.H, self.d, affine=False)
+        self.dQK_norm  = nn.Sequential(nn.BatchNorm1d(self.H), nn.LeakyReLU(negative_slope=9.))
+        
+    def getHidden(self, hidd):
+        B,L,_ = hidd.shape
+        hidd  = hidd.view( B, L, self.H, self.d )
+        hidd  = hidd.transpose(1,2)
+        return hidd
+    def forward(self, Q, K, V, pad_mask, bx_packed, **kargs):
+        Q = self.getHidden(Q) # Q:[B,L,D] -> Q:[B,H,L,d]
+        K = self.getHidden(K) # K:[B,L,D] -> K:[B,H,L,d]
+        
+        V = self.getHidden(V) # V:[B,L,D] -> V:[B,H,L,d]
+        V = V.transpose(-1,-2) # V:[B,H,L,d] -> V:[B,H,d,L]
+        V = self.V_norm( V )   # V:[B,H,d,L] -> V:[B,H,d,L]
+        V = V.transpose(-1,-2) # V:[B,H,d,L] -> V:[B,H,L,d]
+        
+        B,H,L,_ = Q.shape
+        pad_mask = pad_mask.unsqueeze(1).repeat([1, H, 1, 1]).logical_not() # pm:[B, L, L] -> pm:[B, H, L, L]
+        
+        # co_weights (cW)
+        co_weights = self.dist_func( K, Q )              # SIMILARITY(Q:[B,H,L,D//H], Q:[B,H,L,D//H]) -> cW:[B,H,L,L] 
+        co_weights = co_weights.reshape(B,H,L*L)         # cW:[B,H,L,L] -> cW:[B,H,L*L]
+        co_weights = self.dQK_norm(co_weights)           # batchNorm(cW:[B,H,L*L]) -> cW:[B,H,L*L]
+        co_weights = co_weights.reshape(B,H,L,L)         # cW:[B,H,L*L] -> cW:[B,H,L,L]
+        co_weights[pad_mask] = 0.                        # fill(cW:[B,H,L,L], pad)
+        co_weights = torch.softmax(co_weights, dim=-1)   # softmax(cW:[B, H, L, L]) -> cW:[B, H, L, L']
+        co_weights = removeNaN(co_weights)               # fill(cW:[B,H,L,L'], NaN)
+        
+        return { 'co_weights': co_weights, 'bx_packed': bx_packed, 'V': V } # 
+
 class ETCModel(nn.Module):
     def __init__(self, vocab_size: int, hiddens: int, nclass: int, maxF: int=20, nheads: int=6,
                  alpha: float = 0.25, gamma: float = 3., reduction: str = 'sum', drop: float = .5,

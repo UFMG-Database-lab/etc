@@ -141,17 +141,19 @@ etc_desc = {
                                     'stopwordsSet': 'both',
                                     'model': 'topk',
                                     'oversample': False, 
-                                    'vocab_max_size': 500000,
+                                    'vocab_max_size': 1000000,
                                     'ngram_range': (1,2),
                                     'verbose': True
                                 },
                             'model': { 
-                                "gamma": 3.,
+                                "gamma": 5.,
                                 "hiddens": 300,
-                                'att_model': 'AA'
+                                'nheads': 12,
+                                'att_model': 'AA',
+                                'norep': 1
                             },
                             'device': 'cuda',
-                            'batch_size': 16,
+                            'batch_size': 32,
                             'nepochs': 50,
                             'lr': 5e-3,
                             'weight_decay': 5e-3,
