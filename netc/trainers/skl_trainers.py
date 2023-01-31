@@ -5,14 +5,20 @@ from ..utils.builder import from_descriptor
 class SklTrainer(Trainect):
     def __init__(self, tname, descriptor):
         super(SklTrainer, self).__init__(tname, descriptor)
+        from sklearn.preprocessing import LabelEncoder
+        self.le = LabelEncoder()
+    def predict(self, model, X):
+        return self.le.inverse_transform(model.predict(X))
     def train_model(self, model, fold):
         X = fold.X_train
         y = fold.y_train
         if fold.with_val:
             X += fold.X_val
             y += fold.y_val
+        y = self.le.fit_transform(y)
         model.fit(X, y)
         return {  }
+
 class CVSklTrainer(SklTrainer):
     def __init__(self, tname, descriptor):
         super(CVSklTrainer, self).__init__(tname, descriptor)
