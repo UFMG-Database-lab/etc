@@ -90,8 +90,8 @@ class ETCClassifier(BaseEstimator):
                         b_pbar.update( len(data['labels']) )
                         del result, data
 
-                    f1_ma = f1_score(y_true, y_preds, average='macro')*100.
-                    f1_mi = f1_score(y_true, y_preds, average='micro')*100.
+                    f1_ma = f1_score(y_true, y_preds, average='macro')
+                    f1_mi = f1_score(y_true, y_preds, average='micro')
                     trained_f1 = (f1_mi, f1_ma)
                     b_pbar.desc = f"t-F1: ({f1_mi:.3}/{f1_ma:.3}) L={(loss_train/(i+1)):.6}"
                     loss_train = loss_train/(i+1)
