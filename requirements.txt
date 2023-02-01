@@ -68,3 +68,4 @@ xxhash~=3.0.0
 yarl~=1.8.1
 --extra-index-url https://download.pytorch.org/whl/cu116
 torch~=1.12.1
+SentencePiece

@@ -19,11 +19,12 @@ from ..metrics.tick import Tick
 
 class ETCClassifier(BaseEstimator):
     def __init__(self, tknz = {}, model = {}, nepochs:int=50,
-                max_drop:float=.75, batch_size:int=16,
+                max_drop:float=.75, batch_size:int=16, min_f1=.97,
                 weight_decay:float = 5e-3, lr:float = 5e-3, device='cuda'):
         super(ETCClassifier, self).__init__()
         self.model      = model
         self.tknz       = tknz
+        self.min_f1     = min_f1
         if isinstance(self.tknz, dict):
             self.tknz = Tokenizer(**self.tknz)
 
@@ -91,6 +92,7 @@ class ETCClassifier(BaseEstimator):
 
                     f1_ma = f1_score(y_true, y_preds, average='macro')*100.
                     f1_mi = f1_score(y_true, y_preds, average='micro')*100.
+                    trained_f1 = (f1_ma, f1_mi)
                     b_pbar.desc = f"t-F1: ({f1_mi:.3}/{f1_ma:.3}) L={(loss_train/(i+1)):.6}"
                     loss_train = loss_train/(i+1)
                     total = 0.
@@ -118,7 +120,7 @@ class ETCClassifier(BaseEstimator):
                     metric = (loss_val/(i+1)) / ( f1_ma + f1_mi )
                     self.scheduler.step(loss_val)
 
-                    if best-metric > 0.0001 :
+                    if best-metric > 0.0001  and (trained_f1[0] > self.min_f1 and trained_f1[1] > self.min_f1):
                         best = metric
                         counter = 1
                         best_acc = correct/total

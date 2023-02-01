@@ -28,7 +28,7 @@ from .miscellaneous import Documents, Classes, Tag2Idx, Tag2Name, Tags, Document
 np.random.seed(1608637542)
 torch.manual_seed(1608637542)
 
-from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
 from collections import Counter
 import copy
 from tqdm import tqdm
@@ -40,17 +40,19 @@ def createPath(p):
 
 def prep_data(X_train, y_train):
 
-	sss = StratifiedShuffleSplit(n_splits=2, test_size=0.1, random_state=2018)
-	for train_index, val_index in sss.split(X_train, y_train):
-		continue
+	try:
+		sss = StratifiedShuffleSplit(n_splits=2, test_size=0.1, random_state=2018)
+		train_index, val_index = next(sss.split(X_train, y_train))
+		X_train_new = [X_train[x] for x in train_index]
+		y_train_new = [y_train[x] for x in train_index]
+		X_val   = [X_train[x] for x in val_index]
+		y_val   = [y_train[x] for x in val_index]
 
-	X_train_new = [X_train[x] for x in train_index]
-	y_train_new = [y_train[x] for x in train_index]
-	X_val   = [X_train[x] for x in val_index]
-	y_val   = [y_train[x] for x in val_index]
-
-	return X_train_new, y_train_new, X_val, y_val
-
+		return X_train_new, y_train_new, X_val, y_val
+	except:
+		pass
+	
+	return train_test_split(X_train, y_train, test_size=0.1, random_state=42)
 
 
 MODEL_CLASSES = {
