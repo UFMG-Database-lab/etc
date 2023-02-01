@@ -48,7 +48,7 @@ class ETCClassifier(BaseEstimator):
         self.optimizer = AdamW( self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode='min', factor=.95, patience=3, verbose=True)
         best = 99999.
-        best_acc = 0.
+        trained_f1 = (0,0)
         counter = 1
         dl_val = DataLoader(list(zip(X_val, y_val)), batch_size=self.batch_size,
                                 shuffle=False, collate_fn=self.tknz.collate_val)
@@ -86,13 +86,13 @@ class ETCClassifier(BaseEstimator):
                         y_preds.extend(list(y_pred.cpu()))
 
                         self.model.drop_.p  = (correct/total)*self.max_drop
-                        b_pbar.desc = f"--ACC: {(correct/total):.3} L={(loss_train/(i+1)):.6} b={i+1}"
+                        b_pbar.desc = f"--ACC: {(correct/total):.3} ({trained_f1[0]},{trained_f1[1]}) L={(loss_train/(i+1)):.6} b={i+1}"
                         b_pbar.update( len(data['labels']) )
                         del result, data
 
                     f1_ma = f1_score(y_true, y_preds, average='macro')*100.
                     f1_mi = f1_score(y_true, y_preds, average='micro')*100.
-                    trained_f1 = (f1_ma, f1_mi)
+                    trained_f1 = (f1_mi, f1_ma)
                     b_pbar.desc = f"t-F1: ({f1_mi:.3}/{f1_ma:.3}) L={(loss_train/(i+1)):.6}"
                     loss_train = loss_train/(i+1)
                     total = 0.
