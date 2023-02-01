@@ -86,7 +86,7 @@ class ETCClassifier(BaseEstimator):
                         y_preds.extend(list(y_pred.cpu()))
 
                         self.model.drop_.p  = (correct/total)*self.max_drop
-                        b_pbar.desc = f"--ACC: {(correct/total):.3} ({trained_f1[0]},{trained_f1[1]}) L={(loss_train/(i+1)):.6} b={i+1}"
+                        b_pbar.desc = f"--ACC: {(correct/total):.3} ({trained_f1[0]:.2},{trained_f1[1]:.2}) L={(loss_train/(i+1)):.6} b={i+1}"
                         b_pbar.update( len(data['labels']) )
                         del result, data
 
