@@ -48,7 +48,7 @@ class ETCClassifier(BaseEstimator):
         self.optimizer = AdamW( self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode='min', factor=.95, patience=3, verbose=True)
         best = 99999.
-        trained_f1 = (0,0)
+        trained_f1 = (0.,0.)
         counter = 1
         dl_val = DataLoader(list(zip(X_val, y_val)), batch_size=self.batch_size,
                                 shuffle=False, collate_fn=self.tknz.collate_val)
