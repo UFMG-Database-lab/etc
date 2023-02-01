@@ -120,7 +120,7 @@ class ETCClassifier(BaseEstimator):
                     metric = (loss_val/(i+1)) / ( f1_ma + f1_mi )
                     self.scheduler.step(loss_val)
 
-                    if best-metric > 0.0001  and (trained_f1[0] > self.min_f1 and trained_f1[1] > self.min_f1):
+                    if best-metric > 0.0001:
                         best = metric
                         counter = 1
                         best_acc = correct/total
@@ -129,7 +129,7 @@ class ETCClassifier(BaseEstimator):
                         e_pbar.desc = f"v-F1: ({(f1_mi*100.):.3}/{(f1_ma*100.):.3}) L={(loss_val/(i+1)):.6} M={metric:.5}"
                     elif counter > 10:
                         break
-                    else:
+                    elif trained_f1[0] > self.min_f1 and trained_f1[1] > self.min_f1:
                         counter += 1
                     e_pbar.update(1)
                     b_pbar.update(-(len(y_train)+len(y_val)))
