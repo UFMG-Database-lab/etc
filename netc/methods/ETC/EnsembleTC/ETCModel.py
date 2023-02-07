@@ -61,29 +61,21 @@ class nearAttention(nn.Module):
         self.H = nheads
         self.D = hiddens
         self.d = hiddens // nheads
-        self.dist_func = DistMatrix()
+        self.dist      = DistMatrix()
         self.V_norm    = nn.BatchNorm2d(self.H, self.d, affine=False)
+        self.Q_norm    = nn.BatchNorm2d(self.H, self.d, affine=False)
+        self.K_norm    = nn.BatchNorm2d(self.H, self.d, affine=False)
         self.dQK_norm  = nn.Sequential(nn.BatchNorm1d(self.H), nn.LeakyReLU(negative_slope=9.))
+    def forward(self, Q, K, V, pad_mask, **kargs):
+        #V = V.transpose(-1,-2) # V:[B,H,L,d] -> V:[B,H,d,L]
+        #V = self.V_norm( V )   # V:[B,H,d,L] -> V:[B,H,d,L]
+        #V = V.transpose(-1,-2) # V:[B,H,d,L] -> V:[B,H,L,d]
+        V = self.V_norm(V.transpose(-1,-2)).transpose(-1,-2)
         
-    def getHidden(self, hidd):
-        B,L,_ = hidd.shape
-        hidd  = hidd.view( B, L, self.H, self.d )
-        hidd  = hidd.transpose(1,2)
-        return hidd
-    def forward(self, Q, K, V, pad_mask, bx_packed, **kargs):
-        Q = self.getHidden(Q) # Q:[B,L,D] -> Q:[B,H,L,d]
-        K = self.getHidden(K) # K:[B,L,D] -> K:[B,H,L,d]
-        
-        V = self.getHidden(V) # V:[B,L,D] -> V:[B,H,L,d]
-        V = V.transpose(-1,-2) # V:[B,H,L,d] -> V:[B,H,d,L]
-        V = self.V_norm( V )   # V:[B,H,d,L] -> V:[B,H,d,L]
-        V = V.transpose(-1,-2) # V:[B,H,d,L] -> V:[B,H,L,d]
-        
-        B,H,L,_ = Q.shape
-        pad_mask = pad_mask.unsqueeze(1).repeat([1, H, 1, 1]).logical_not() # pm:[B, L, L] -> pm:[B, H, L, L]
+        B,H,L,_  = Q.shape
         
         # co_weights (cW)
-        co_weights = self.dist_func( K, Q )              # SIMILARITY(Q:[B,H,L,D//H], Q:[B,H,L,D//H]) -> cW:[B,H,L,L] 
+        co_weights = self.dist( K, Q )                   # distL2(Q:[B,H,L,D//H], Q:[B,H,L,D//H]) -> cW:[B,H,L,L] 
         co_weights = co_weights.reshape(B,H,L*L)         # cW:[B,H,L,L] -> cW:[B,H,L*L]
         co_weights = self.dQK_norm(co_weights)           # batchNorm(cW:[B,H,L*L]) -> cW:[B,H,L*L]
         co_weights = co_weights.reshape(B,H,L,L)         # cW:[B,H,L*L] -> cW:[B,H,L,L]
@@ -91,39 +83,81 @@ class nearAttention(nn.Module):
         co_weights = torch.softmax(co_weights, dim=-1)   # softmax(cW:[B, H, L, L]) -> cW:[B, H, L, L']
         co_weights = removeNaN(co_weights)               # fill(cW:[B,H,L,L'], NaN)
         
-        return { 'co_weights': co_weights, 'bx_packed': bx_packed, 'V': V } # 
+        V = co_weights @ V
+        Q = co_weights @ Q
+        Q = self.Q_norm(Q.transpose(-1,-2)).transpose(-1,-2)
+        K = co_weights @ K
+        K = self.K_norm(K.transpose(-1,-2)).transpose(-1,-2)
+        
+        return { 'co_weights': co_weights, 'V': V, 'Q': Q, 'K': K, 'pad_mask': pad_mask } # 
 
 class ETCModel(nn.Module):
     def __init__(self, vocab_size: int, hiddens: int, nclass: int, maxF: int=20, nheads: int=6,
                  alpha: float = 0.25, gamma: float = 3., reduction: str = 'sum', drop: float = .5,
-                att_model: str ='AA', norep=2, dev=False):
+                att_model: str ='AA', layers=1, norep=1, dev=False):
         super(ETCModel, self).__init__()
         self.D    = hiddens    # number of   (D)imensions
         self.C    = nclass     # number of   (C)lass
         self.H    = nheads     # number of   (H)eads on multihead
+        self.d    = self.D // self.H
         self.V    = vocab_size # size of the (V)ocabulary
         self.P    = norep      # number of   (P)riors
+        self.la   = layers
         self._dev  = dev
         self.drop_ = nn.Dropout(drop)
+        self.wei_norm = nn.Sequential( nn.Linear(self.H, 2), nn.Softmax(dim=-1) )
         
         self.emb_  = EmbbedingTFIDF(self.V, self.D, maxF=maxF, drop=self.drop_,  att_model=att_model)
-        self.nAtt_ = nearAttention(self.D, self.H)
-        self.etc_  = EnsembleTC(drop=self.drop_, hiddens=self.D, nclass=self.C, norep=self.P, nheads=self.H, dev=self._dev)
-        self.loss_ = FocalLoss(gamma=gamma, alpha=alpha, reduction=reduction)
+        self.nAtt_ = nn.Sequential(*[nearAttention(self.D, self.H) for _ in range(self.la) ])
+        self.loss_m = FocalLoss(gamma=gamma, alpha=alpha, reduction='mean')
+        self.loss_s = FocalLoss(gamma=gamma, alpha=alpha, reduction='sum')
+        
+        self.fc     = nn.Sequential(nn.Linear(self.D, self.C+self.P), nn.Softmax(dim=-1))
+        
+    def getHidden(self, hidd):
+        B,L,_ = hidd.shape
+        hidd  = hidd.view( B, L, self.H, self.d )
+        hidd  = hidd.transpose(1,2)
+        return hidd
+    
+    def catHiddens(self, hidd):
+        B, H, L, d = hidd.shape
+        assert H*d == self.D
+        assert H == self.H
+        hidd = hidd.transpose(1,2)
+        hidd = hidd.reshape(B, L, H*d)
+        return hidd
     
     def forward(self, doc_tids, TFs, DFs, labels=None):
-        emb  = self.emb_(doc_tids, TFs, DFs) 
-        att  = self.nAtt_(**emb)
-        self.etc_._dev = self._dev
-        ensb = self.etc_(**att)
+        att  = self.emb_(doc_tids, TFs, DFs) 
+        att["pad_mask"] = att["pad_mask"].unsqueeze(1).repeat([1, self.H, 1, 1]).logical_not() # pm:[B, L, L] -> pm:[B, H, L, L]
+        att  = { k: self.getHidden(v) if k in ('K', 'Q', 'V') else v for (k,v) in att.items() }
+        for nAttLayer in self.nAtt_:
+            att  = nAttLayer(**att)
         
-        result = { 't_probs': ensb['V_logits'], 'logits': ensb['logits'], 'V': ensb['V']}
+        V      = self.catHiddens(att['V'])
+        V_lgts = self.fc(V)                # [B, L, C+P]
+        
+        co_wei = att['co_weights']                     # [B,H,L,L']
+        B, H, L,_ = co_wei.shape
+        co_wei = co_wei.transpose(-1,-2)               # [B,L,L',H]
+        co_wei = co_wei.reshape(B, L*L, H)             # [B,L*L,2]
+        co_wei = self.wei_norm(co_wei)                 # [B,L*L,2]
+        co_wei = co_wei.reshape(B, L, L, 2)            # [B,L,L,2]
+        co_wei = co_wei.sum(dim=-2, keepdims=True)     # [B,L,1,2]
+        co_wei = co_wei[:,:,:,0]                       # [B,L,1]
+        co_wei = torch.softmax(co_wei, dim=-1)
+        
+        
+        logits = (co_wei * V_lgts).sum(dim=1)
+        logits = logits[:,:self.C]
+        logits = torch.softmax(logits, dim=-1)
+        
+        result = { 'logits': logits, 'V': V}
         if labels is not None:
-            result['loss'] = self.loss_(result['logits'], labels)
-        if self._dev:
-            result['old_V'] = emb['V']
-            result['co_weights'] = att['co_weights']
-            result['weights'] = ensb['weights']
-            result['old_V_lgts'] = ensb['old_V_lgts']
+            B,L,C   = V_lgts.shape
+            result['loss'] = 0.
+            result['loss'] += self.loss_s(logits, labels) # FLoss(logits:[B,C]; labels:[B]) -> loss1: 1
+            #result['loss'] += self.loss_m(V_lgts.reshape( B*L,C ), labels.repeat( L ))  # FLoss(V_lgts:[B*L,C]; labels:[B*L]) -> loss1: 1
         
         return result
