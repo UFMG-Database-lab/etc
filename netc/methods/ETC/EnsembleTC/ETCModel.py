@@ -54,43 +54,39 @@ class EnsembleTC(nn.Module):
             returing['weights'] = weights
         
         return returing
-
+        
 class nearAttention(nn.Module):
-    def __init__(self, hiddens: int, nheads: int=6):
+    def __init__(self, hiddens: int, drop_: nn.Dropout, nheads: int=6):
         super(nearAttention, self).__init__()
         self.H = nheads
         self.D = hiddens
         self.d = hiddens // nheads
+        self.drop_ = drop_
         self.dist      = DistMatrix()
-        self.V_norm    = nn.BatchNorm2d(self.H, self.d, affine=False)
-        self.Q_norm    = nn.BatchNorm2d(self.H, self.d, affine=False)
-        self.K_norm    = nn.BatchNorm2d(self.H, self.d, affine=False)
-        self.dQK_norm  = nn.Sequential(nn.BatchNorm1d(self.H), nn.LeakyReLU(negative_slope=9.))
+        self.q_norm    = nn.BatchNorm2d(self.H, self.d)
+        self.k_norm    = nn.BatchNorm2d(self.H, self.d)
+        self.dQK_norm  = nn.Sequential(nn.BatchNorm1d(self.H), nn.LeakyReLU(negative_slope=99.))
     def forward(self, Q, K, V, pad_mask, **kargs):
-        #V = V.transpose(-1,-2) # V:[B,H,L,d] -> V:[B,H,d,L]
-        #V = self.V_norm( V )   # V:[B,H,d,L] -> V:[B,H,d,L]
-        #V = V.transpose(-1,-2) # V:[B,H,d,L] -> V:[B,H,L,d]
-        V = self.V_norm(V.transpose(-1,-2)).transpose(-1,-2)
-        
-        B,H,L,_  = Q.shape
+        B,H,L,d  = Q.shape
         
         # co_weights (cW)
         co_weights = self.dist( K, Q )                   # distL2(Q:[B,H,L,D//H], Q:[B,H,L,D//H]) -> cW:[B,H,L,L] 
         co_weights = co_weights.reshape(B,H,L*L)         # cW:[B,H,L,L] -> cW:[B,H,L*L]
         co_weights = self.dQK_norm(co_weights)           # batchNorm(cW:[B,H,L*L]) -> cW:[B,H,L*L]
         co_weights = co_weights.reshape(B,H,L,L)         # cW:[B,H,L*L] -> cW:[B,H,L,L]
-        co_weights[pad_mask] = 0.                        # fill(cW:[B,H,L,L], pad)
+        if 'co_weights' in kargs:
+            co_weights = co_weights + kargs['co_weights']
+        co_weights[pad_mask] = float('-inf')             # fill(cW:[B,H,L,L], pad)
         co_weights = torch.softmax(co_weights, dim=-1)   # softmax(cW:[B, H, L, L]) -> cW:[B, H, L, L']
         co_weights = removeNaN(co_weights)               # fill(cW:[B,H,L,L'], NaN)
         
-        V = co_weights @ V
-        Q = co_weights @ Q
-        Q = self.Q_norm(Q.transpose(-1,-2)).transpose(-1,-2)
-        K = co_weights @ K
-        K = self.K_norm(K.transpose(-1,-2)).transpose(-1,-2)
+        kargs['co_weights'] = co_weights
+        kargs['pad_mask'] = pad_mask
+        kargs['V'] = co_weights @ V
+        kargs['K'] = self.k_norm( (co_weights @ K).transpose(-1,-2) ).transpose(-1,-2)
+        kargs['Q'] = self.q_norm( (co_weights @ Q).transpose(-1,-2) ).transpose(-1,-2)
         
-        return { 'co_weights': co_weights, 'V': V, 'Q': Q, 'K': K, 'pad_mask': pad_mask } # 
-
+        return kargs # 
 class ETCModel(nn.Module):
     def __init__(self, vocab_size: int, hiddens: int, nclass: int, maxF: int=20, nheads: int=6,
                  alpha: float = 0.25, gamma: float = 3., reduction: str = 'sum', drop: float = .5,
@@ -105,12 +101,11 @@ class ETCModel(nn.Module):
         self.la   = layers
         self._dev  = dev
         self.drop_ = nn.Dropout(drop)
-        self.wei_norm = nn.Sequential( nn.Linear(self.H, 2), nn.Softmax(dim=-1) )
+        self.wei_norm = nn.Sequential( nn.BatchNorm1d(self.H), nn.Softmax(dim=-1) )
         
         self.emb_  = EmbbedingTFIDF(self.V, self.D, maxF=maxF, drop=self.drop_,  att_model=att_model)
-        self.nAtt_ = nn.Sequential(*[nearAttention(self.D, self.H) for _ in range(self.la) ])
-        self.loss_m = FocalLoss(gamma=gamma, alpha=alpha, reduction='mean')
-        self.loss_s = FocalLoss(gamma=gamma, alpha=alpha, reduction='sum')
+        self.nAtt_ = nn.Sequential(*[nearAttention(self.D, self.drop_, self.H) for _ in range(self.la) ])
+        self.loss_s = FocalLoss(gamma=gamma, alpha=alpha, reduction=reduction)
         
         self.fc     = nn.Sequential(nn.Linear(self.D, self.C+self.P), nn.Softmax(dim=-1))
         
@@ -135,29 +130,31 @@ class ETCModel(nn.Module):
         for nAttLayer in self.nAtt_:
             att  = nAttLayer(**att)
         
-        V      = self.catHiddens(att['V'])
-        V_lgts = self.fc(V)                # [B, L, C+P]
         
-        co_wei = att['co_weights']                     # [B,H,L,L']
-        B, H, L,_ = co_wei.shape
-        co_wei = co_wei.transpose(-1,-2)               # [B,L,L',H]
-        co_wei = co_wei.reshape(B, L*L, H)             # [B,L*L,2]
-        co_wei = self.wei_norm(co_wei)                 # [B,L*L,2]
-        co_wei = co_wei.reshape(B, L, L, 2)            # [B,L,L,2]
-        co_wei = co_wei.sum(dim=-2, keepdims=True)     # [B,L,1,2]
-        co_wei = co_wei[:,:,:,0]                       # [B,L,1]
-        co_wei = torch.softmax(co_wei, dim=-1)
+        W = att['co_weights']           # [B,H,L,L']
+        W = W.sum(dim=-2).mean(dim=-2, keepdims=True)     # [B,1,L]
+        W = W.transpose(1,2)                             # [B,L,1]
+        W[att['bx_packed']] = float('-inf')
+        W = torch.softmax(W, dim=1)
+        W = removeNaN(W)
         
+        V      = self.catHiddens(att['V']) # [B,L,D]
         
-        logits = (co_wei * V_lgts).sum(dim=1)
-        logits = logits[:,:self.C]
-        logits = torch.softmax(logits, dim=-1)
+        V_lgts = (W * self.fc(V)).sum(dim=1)      # [B,L,1]*[B,L,P+C] -> [B,P+C]
+        V_lgts = torch.softmax(V_lgts, dim=-1)    # [B,P+C]
+        EV     = -torch.log2( torch.pow(V_lgts, V_lgts) ).sum(dim=-1, keepdims=True) # H(P) = -sum_i log2( P_i^P_i ) = -sum_i P_i * log2(P_i)
+        
+        M_lgts = self.fc((W * V).sum(dim=1))
+        M_lgts = torch.softmax(M_lgts, dim=-1)
+        EM     = -torch.log2( torch.pow(M_lgts, M_lgts) ).sum(dim=-1, keepdims=True)
+        
+        E      = EM+EV
+        
+        logits = (EV/E)*V_lgts + (EM/E)*M_lgts # [B,L,1] * [B,L,D] -> [B,D] -> [B, P+C]
+        logits = torch.softmax(logits[:,self.P:], dim=-1)
         
         result = { 'logits': logits, 'V': V}
         if labels is not None:
-            B,L,C   = V_lgts.shape
-            result['loss'] = 0.
-            result['loss'] += self.loss_s(logits, labels) # FLoss(logits:[B,C]; labels:[B]) -> loss1: 1
-            #result['loss'] += self.loss_m(V_lgts.reshape( B*L,C ), labels.repeat( L ))  # FLoss(V_lgts:[B*L,C]; labels:[B*L]) -> loss1: 1
+            result['loss'] = self.loss_s(logits, labels) # FLoss(logits:[B,C]; labels:[B]) -> loss1: 1
         
         return result
