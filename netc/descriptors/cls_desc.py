@@ -165,28 +165,31 @@ etc_desc = {
 }
 
 tfidfatt = {
-    'classpath': 'netc.methods.tfidfatt.TrainerAttentionTFIDF.TrainerAttentionTFIDF',
-    'init_params': { 'tname': 'NAttTFIDF',
+    'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
+    'init_params': { 'tname': 'ETC-TFIDF',
                      'descriptor': {
-                        'classpath': 'netc.methods.tfidfatt.AttentionTFIDF.AttTFIDFClassifier',
+                        'classpath': 'netc.methods.ETC.tfidfatt.AttTFIDFClassifier.AttTFIDFClassifier',
                         'init_params': {
                             'tknz': { 
                                     'mindf': 2,
                                     'stopwordsSet': 'both',
                                     'model': 'topk',
                                     'oversample': False, 
-                                    'vocab_max_size': 500000,
+                                    'vocab_max_size': 1000000,
                                     'ngram_range': (1,2),
                                     'verbose': True
                                 },
                             'model': { 
-                                "gamma": 3.,
-                                "hiddens": 300,
+                                "gamma": 5.,
+                                'nheads': 16,
+                                "hiddens": 512,
+                                "norep": 2,
+                                'sim_func': 'sim',
                                 'att_model': 'AA'
                             },
                             'device': 'cuda',
                             'batch_size': 16,
-                            'nepochs': 50,
+                            'nepochs': 100,
                             'lr': 5e-3,
                             'weight_decay': 5e-3,
                             'max_drop': .75

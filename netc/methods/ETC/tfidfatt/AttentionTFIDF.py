@@ -1,16 +1,5 @@
 import torch
 import torch.nn as nn
-from torch.optim import AdamW
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-
-from sklearn.metrics import f1_score
-from torch.utils.data import DataLoader
-from tqdm.auto import tqdm
-import copy
-from numpy import ceil
-
-from sklearn.base import BaseEstimator
-from collections import defaultdict
 
 from ..FocalLoss import FocalLoss
 from ..EmbbedingTFIDF import EmbbedingTFIDF
@@ -26,13 +15,15 @@ class AttentionTFIDF(nn.Module):
         self.H   = nheads     # number of   (H)eads on multhead
         self.V   = vocab_size # size of the (V)ocabulary
         self.P   = norep
-        #self.norm     = nn.LayerNorm(self.H)
-        self.norm     = nn.BatchNorm1d(self.H)
-        self.fc       = nn.Sequential( nn.Linear(self.D, self.C+self.P), nn.Softmax(dim=-1))
+        self.norm     = nn.LayerNorm(self.H)
+        self.fc       = nn.Sequential( nn.Linear(self.D, self.C+self.P), nn.Softmax(dim=-1) )
         self.drop_    = nn.Dropout(drop)
         self.emb_     = EmbbedingTFIDF(vocab_size, self.D, maxF=maxF, drop=self.drop_,  att_model=att_model)
         self.loss_f   = FocalLoss(gamma=gamma, alpha=alpha, reduction=reduction)
-        self.dist_func = DistMatrix()
+        if sim_func.lower() == "dist":
+            self.dist_func = DistMatrix()
+        if sim_func.lower() == "sim":
+            self.dist_func = SimMatrix()
         self.init_weights()
     
     def init_weights(self):
@@ -75,7 +66,7 @@ class AttentionTFIDF(nn.Module):
         B,H,L,_ = Q.shape
         
         co_weights  = self.dist_func( K, Q ) # SIMILARITY(Q:[B,H,L,D//H], Q:[B,H,L,D//H]) -> W:[B,H,L,L]
-        co_weights  = self.bnormalize(co_weights)
+        co_weights  = self.lnormalize(co_weights)
         
         pad_mask = result['pad_mask'].unsqueeze(1).repeat([1, H, 1, 1]) # pm:[B, L, L] -> pm:[B, H, L, L]
         co_weights[pad_mask.logical_not()] = 0.
@@ -83,27 +74,25 @@ class AttentionTFIDF(nn.Module):
         co_weights = self.removeNaN(co_weights)
         
         V = self.getHidden(result['V'])
-        V = co_weights @ V    # W:[B,H,L,L] @ V:[B,H,L,D//H] -> V':[B,H,L,D//H]
-        V = self.drop_(V)
-        V_lgts = self.fc(self.catHiddens(V))         # FC(V':[B,L,D])-> V_lgs:[B,L,C+b]
+        V = self.drop_(co_weights @ V)                  # W:[B,H,L,L] @ V:[B,H,L,D//H] -> V':[B,H,L,D//H]
+        V_lgts = self.fc(self.catHiddens(V))            # FC(V':[B,L,D])-> V_lgs:[B,L,C+b]
         
-        weights = co_weights.sum(axis=-2).mean(axis=-2)    # sum(co_weights:[B,H,L,L], -2) -> weights:[B,L]
+        weights = co_weights.sum(axis=-2).mean(axis=-2) # co_weights:[B,(H,L),L'] -> weights:[B,L']
 
-        weights = weights / result['doc_sizes']                   # weights:[B,L] / d_sizes:[B,1]
-        #bx_pack = result['bx_packed'].unsqueeze(1).repeat([1,self.H,1])
+        weights = weights / result['doc_sizes']         # weights:[B,L] / d_sizes:[B,1]
         weights[result['bx_packed']] = float('-inf')
-        weights = torch.softmax(weights, dim=-1)     # softmax(weights:[B,L]) -> weights:[B,L]
-        weights = self.removeNaN(weights).unsqueeze(-1)  # weights:[B,L] -> weights:[B,L,1]
+        weights = torch.softmax(weights, dim=-1)        # softmax(weights:[B,L]) -> weights:[B,L]
+        weights = self.removeNaN(weights)               # weights:[B,L] -> weights:[B,L,1]
         
-        V_lgts = V_lgts * weights                        # V_lgs:[B,L,C+1] * weights:[B,L,1] -> logits:[B,L,C+1]
-
-        logits = V_lgts.sum(dim=-2)[:,:self.C]         # V_lgts:logits:[B,L,C+b] -> logits:[B,C]
-        logits = torch.softmax(logits, dim=-1)           # softmax(logits:[B,C]) -> logits:[B,C]
+        logits = V_lgts * weights.unsqueeze(-1)         # V_lgs:[B,L,C+1] * weights:[B,L,1] -> logits:[B,L,C+1]
+        logits = logits.sum(dim=-2)
+        logits = logits[:,:self.C]                      # V_lgts:logits:[B,L,C+b] -> logits:[B,C]
+        logits = torch.softmax(logits, dim=-1)          # softmax(logits:[B,C]) -> logits:[B,C]
          
         result_ = { 't_probs': V_lgts, 'logits': logits}
         if labels is not None:
             result_['loss'] = self.loss_f(logits, labels)
-        
+            
         return result_
 
 def seed_everything(seed: int):

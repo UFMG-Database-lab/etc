@@ -1,6 +1,6 @@
-from .descriptors.cls_desc import DESC_CLS
-from .descriptors.dst_desc import DESC_DST
-from .experiments.experiments import Experiment
+from descriptors.cls_desc import DESC_CLS
+from descriptors.dst_desc import DESC_DST
+from experiments.experiments import Experiment
 
 import argparse
 
