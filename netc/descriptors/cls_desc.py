@@ -184,7 +184,7 @@ tfidfatt = {
                                 'nheads': 16,
                                 "hiddens": 512,
                                 "norep": 2,
-                                'sim_func': 'sim',
+                                'sim_func': 'dist',
                                 'att_model': 'AA'
                             },
                             'device': 'cuda',
@@ -193,6 +193,152 @@ tfidfatt = {
                             'lr': 5e-3,
                             'weight_decay': 5e-3,
                             'max_drop': .75
+                         }
+                      }
+                    }
+
+}
+
+from nltk.corpus import stopwords as stopwords_by_lang
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS as stop_words
+stopwordsSet  = list(set(stopwords_by_lang.words('english')))
+stopwordsSet += list(set(stop_words))
+
+etc_imb = {
+    'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
+    'init_params': { 'tname': 'ETC-Imb',
+                     'descriptor': {
+                        'classpath': 'netc.methods.ETC.tfidfatt.ETCClassifier.ETCClassifier',
+                        'init_params': {
+                            'tknz': { 
+                                'min_df': 2,
+                                'stop_words': stopwordsSet,
+                                'ngram_range': (1,2),
+                                'with_CLS': False,
+                                'imbalancer': None
+                                #'imbalancer': 'smote'
+                                #'imbalancer': 'random'
+                                #'imbalancer': 'adasyn'
+                            },
+                            'model': { 
+                                "gamma": 5.,
+                                "hiddens": 512,
+                                'nheads': 16,
+                                'att_model': 'aa',
+                                'sim_func': 'dist',
+                                'norep': 2
+                            },
+                            'device': 'cuda',
+                            'batch_size': 64,
+                            'nepochs': 500,
+                            'lr': 5e-3,
+                            'weight_decay': 5e-3,
+                            'max_drop': .3
+                         }
+                      }
+                    }
+
+}
+etc_imb_smote = {
+    'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
+    'init_params': { 'tname': 'ETC-SMOTE',
+                     'descriptor': {
+                        'classpath': 'netc.methods.ETC.tfidfatt.ETCClassifier.ETCClassifier',
+                        'init_params': {
+                            'tknz': { 
+                                'min_df': 2,
+                                'stop_words': stopwordsSet,
+                                'ngram_range': (1,2),
+                                'with_CLS': False,
+                                #'imbalancer': None
+                                'imbalancer': 'smote'
+                                #'imbalancer': 'random'
+                                #'imbalancer': 'adasyn'
+                            },
+                            'model': { 
+                                "gamma": 5.,
+                                "hiddens": 512,
+                                'nheads': 16,
+                                'att_model': 'aa',
+                                'sim_func': 'dist',
+                                'norep': 2
+                            },
+                            'device': 'cuda',
+                            'batch_size': 64,
+                            'nepochs': 500,
+                            'lr': 5e-3,
+                            'weight_decay': 5e-3,
+                            'max_drop': .3
+                         }
+                      }
+                    }
+
+}
+etc_imb_ada = {
+    'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
+    'init_params': { 'tname': 'ETC-ADASYN',
+                     'descriptor': {
+                        'classpath': 'netc.methods.ETC.tfidfatt.ETCClassifier.ETCClassifier',
+                        'init_params': {
+                            'tknz': { 
+                                'min_df': 2,
+                                'stop_words': stopwordsSet,
+                                'ngram_range': (1,2),
+                                'with_CLS': False,
+                                #'imbalancer': None
+                                #'imbalancer': 'smote'
+                                #'imbalancer': 'random'
+                                'imbalancer': 'adasyn'
+                            },
+                            'model': { 
+                                "gamma": 5.,
+                                "hiddens": 512,
+                                'nheads': 16,
+                                'att_model': 'aa',
+                                'sim_func': 'dist',
+                                'norep': 2
+                            },
+                            'device': 'cuda',
+                            'batch_size': 64,
+                            'nepochs': 500,
+                            'lr': 5e-3,
+                            'weight_decay': 5e-3,
+                            'max_drop': .3
+                         }
+                      }
+                    }
+
+}
+etc_imb_rand = {
+    'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
+    'init_params': { 'tname': 'ETC-Random',
+                     'descriptor': {
+                        'classpath': 'netc.methods.ETC.tfidfatt.ETCClassifier.ETCClassifier',
+                        'init_params': {
+                            'tknz': { 
+                                'min_df': 2,
+                                'stop_words': stopwordsSet,
+                                'ngram_range': (1,2),
+                                'with_CLS': False,
+                                #'imbalancer': None
+                                #'imbalancer': 'smote'
+                                'imbalancer': 'random'
+                                #'imbalancer': 'adasyn'
+                            },
+                            'model': { 
+                                "gamma": 5.,
+                                "hiddens": 512,
+                                'nheads': 16,
+                                'att_model': 'aa',
+                                'sim_func': 'dist',
+                                'norep': 2
+                            },
+                            'device': 'cuda',
+                            'batch_size': 64,
+                            'nepochs': 500,
+                            'lr': 5e-3,
+                            'weight_decay': 5e-3,
+                            'max_drop': .3
                          }
                       }
                     }
@@ -273,6 +419,11 @@ DESC_CLS = {
     'bert-tiny': bert_tiny,
     'bert-skl': bert_skl_desc,
     'tfidfatt': tfidfatt,
+
+    'etc-imb': etc_imb,
+    'etc-imb-ada': etc_imb_ada,
+    'etc-imb-rand': etc_imb_rand,
+    'etc-imb-smote': etc_imb_smote,
 
     "hbert": bert_hugg,
     "halbert": albert_hugg,

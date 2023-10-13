@@ -1,0 +1,27 @@
+None wos11967 90.6 90.2 
+None webkb 82.7 77.9 
+None acm 79.8 73.0 
+None ohsumed 77.7 71.5 
+None dblp 82.7 80.9 
+None 20ng 91.3 91.0 
+None books 86.7 86.5 
+
+adasyn wos11967 91.1 90.9 
+adasyn webkb 82.1 78.9
+adasyn acm 79.9 67.6
+adasyn ohsumed 77.2 70.3
+adasyn dblp 83.6 81.8
+adasyn 20ng 91.2 90.8
+adasyn books 86.3 85.9
+
+smote wos11967 91.2 91.0 
+smote webkb 80.9 77.6 
+smote acm 77.4 67.8 
+smote ohsumed 77.8 72.4 
+
+random wos11967 91.6 91.4
+random webkb 82.4 78.7
+random acm 79.3 70.7
+random ohsumed 77.6 70.1
+random dblp 83.0 81.5
+random 20ng 91.1 90.9
