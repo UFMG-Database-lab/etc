@@ -139,7 +139,7 @@ class ETCClassifier(BaseEstimator):
                     e_pbar.update(1)
                     b_pbar.update(-(N_train+len(y_val)))
         self.model = best_model.to(self.device)
-        return self
+        return {'f1_mi': f1_mi, 'f1_ma': f1_ma, 'loss_val': loss_val/(i+1), 'metric': metric}
         
     def predict(self, X):
         dl_test = DataLoader(X, batch_size=self.batch_size*2, shuffle=False, collate_fn=self.tknz.collate)
