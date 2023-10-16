@@ -230,7 +230,7 @@ etc_imb = {
                             },
                             'device': 'cuda',
                             'batch_size': 64,
-                            'nepochs': 500,
+                            'nepochs': 100,
                             'lr': 5e-3,
                             'weight_decay': 5e-3,
                             'max_drop': .3
@@ -265,7 +265,7 @@ etc_imb_smote = {
                             },
                             'device': 'cuda',
                             'batch_size': 64,
-                            'nepochs': 500,
+                            'nepochs': 100,
                             'lr': 5e-3,
                             'weight_decay': 5e-3,
                             'max_drop': .3
@@ -300,7 +300,7 @@ etc_imb_ada = {
                             },
                             'device': 'cuda',
                             'batch_size': 64,
-                            'nepochs': 500,
+                            'nepochs': 100,
                             'lr': 5e-3,
                             'weight_decay': 5e-3,
                             'max_drop': .3
@@ -335,7 +335,7 @@ etc_imb_rand = {
                             },
                             'device': 'cuda',
                             'batch_size': 64,
-                            'nepochs': 500,
+                            'nepochs': 100,
                             'lr': 5e-3,
                             'weight_decay': 5e-3,
                             'max_drop': .3

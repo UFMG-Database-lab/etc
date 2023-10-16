@@ -1,5 +1,5 @@
 export MYHOME=`~`
-echo $MYHOME
+cd $MYHOME
 
 mkdir -p pretrained_models/bert/base
 cd pretrained_models/bert/base

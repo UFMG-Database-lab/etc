@@ -1,3 +1,4 @@
+imblearn
 absl-py~=1.2.0
 aiohttp~=3.8.3
 aiosignal~=1.2.0
@@ -49,7 +50,7 @@ responses~=0.18.0
 rsa~=4.9
 s3transfer~=0.6.0
 sacremoses~=0.0.53
-scikit-learn~=0.24.2
+scikit-learn
 scipy
 six~=1.16.0
 tensorboard~=2.10.1
