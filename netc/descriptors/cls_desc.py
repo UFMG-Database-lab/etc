@@ -212,138 +212,44 @@ etc_imb = {
                         'init_params': {
                             'tknz': { 
                                 'min_df': 2,
+                                'max_features': 750_000,
                                 'stop_words': stopwordsSet,
                                 'ngram_range': (1,2),
                                 'with_CLS': False,
                                 'imbalancer': None
-                                #'imbalancer': 'smote'
-                                #'imbalancer': 'random'
-                                #'imbalancer': 'adasyn'
                             },
                             'model': { 
                                 "gamma": 5.,
-                                "hiddens": 512,
-                                'nheads': 16,
+                                "hiddens": 300,
+                                'nheads': 12,
                                 'att_model': 'aa',
                                 'sim_func': 'dist',
                                 'norep': 2
                             },
                             'device': 'cuda',
-                            'batch_size': 64,
-                            'nepochs': 100,
+                            'batch_size': 16,
+                            'nepochs': 50,
                             'lr': 5e-3,
                             'weight_decay': 5e-3,
-                            'max_drop': .3
+                            'max_drop': .75
                          }
                       }
                     }
 
 }
-etc_imb_smote = {
-    'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
-    'init_params': { 'tname': 'ETC-SMOTE',
-                     'descriptor': {
-                        'classpath': 'netc.methods.ETC.tfidfatt.ETCClassifier.ETCClassifier',
-                        'init_params': {
-                            'tknz': { 
-                                'min_df': 2,
-                                'stop_words': stopwordsSet,
-                                'ngram_range': (1,2),
-                                'with_CLS': False,
-                                #'imbalancer': None
-                                'imbalancer': 'smote'
-                                #'imbalancer': 'random'
-                                #'imbalancer': 'adasyn'
-                            },
-                            'model': { 
-                                "gamma": 5.,
-                                "hiddens": 512,
-                                'nheads': 16,
-                                'att_model': 'aa',
-                                'sim_func': 'dist',
-                                'norep': 2
-                            },
-                            'device': 'cuda',
-                            'batch_size': 64,
-                            'nepochs': 100,
-                            'lr': 5e-3,
-                            'weight_decay': 5e-3,
-                            'max_drop': .3
-                         }
-                      }
-                    }
+from copy import deepcopy
 
-}
-etc_imb_ada = {
-    'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
-    'init_params': { 'tname': 'ETC-ADASYN',
-                     'descriptor': {
-                        'classpath': 'netc.methods.ETC.tfidfatt.ETCClassifier.ETCClassifier',
-                        'init_params': {
-                            'tknz': { 
-                                'min_df': 2,
-                                'stop_words': stopwordsSet,
-                                'ngram_range': (1,2),
-                                'with_CLS': False,
-                                #'imbalancer': None
-                                #'imbalancer': 'smote'
-                                #'imbalancer': 'random'
-                                'imbalancer': 'adasyn'
-                            },
-                            'model': { 
-                                "gamma": 5.,
-                                "hiddens": 512,
-                                'nheads': 16,
-                                'att_model': 'aa',
-                                'sim_func': 'dist',
-                                'norep': 2
-                            },
-                            'device': 'cuda',
-                            'batch_size': 64,
-                            'nepochs': 100,
-                            'lr': 5e-3,
-                            'weight_decay': 5e-3,
-                            'max_drop': .3
-                         }
-                      }
-                    }
+etc_imb_smote = deepcopy(etc_imb)
+etc_imb_smote['init_params']['tname'] = 'ETC-SMOTE'
+etc_imb_smote['init_params']['descriptor']['init_params']['tknz']['imbalancer'] = 'smote'
 
-}
-etc_imb_rand = {
-    'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
-    'init_params': { 'tname': 'ETC-Random',
-                     'descriptor': {
-                        'classpath': 'netc.methods.ETC.tfidfatt.ETCClassifier.ETCClassifier',
-                        'init_params': {
-                            'tknz': { 
-                                'min_df': 2,
-                                'stop_words': stopwordsSet,
-                                'ngram_range': (1,2),
-                                'with_CLS': False,
-                                #'imbalancer': None
-                                #'imbalancer': 'smote'
-                                'imbalancer': 'random'
-                                #'imbalancer': 'adasyn'
-                            },
-                            'model': { 
-                                "gamma": 5.,
-                                "hiddens": 512,
-                                'nheads': 16,
-                                'att_model': 'aa',
-                                'sim_func': 'dist',
-                                'norep': 2
-                            },
-                            'device': 'cuda',
-                            'batch_size': 64,
-                            'nepochs': 100,
-                            'lr': 5e-3,
-                            'weight_decay': 5e-3,
-                            'max_drop': .3
-                         }
-                      }
-                    }
+etc_imb_ada = deepcopy(etc_imb)
+etc_imb_ada['init_params']['tname'] = 'ETC-ADASYN'
+etc_imb_ada['init_params']['descriptor']['init_params']['tknz']['imbalancer'] = 'adasyn'
 
-}
+etc_imb_rand = deepcopy(etc_imb)
+etc_imb_rand['init_params']['tname'] = 'ETC-Random'
+etc_imb_rand['init_params']['descriptor']['init_params']['tknz']['imbalancer'] = 'random'
 
 pte = {
     'classpath': 'netc.trainers.skl_trainers.CVSklTrainer',
@@ -387,7 +293,6 @@ transf_hugg = {
                      }
                     }
 }
-from copy import deepcopy
 bert_hugg = deepcopy(transf_hugg)
 bert_hugg['init_params']['tname'] = 'bert-hugg-base'
 bert_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'bert'
