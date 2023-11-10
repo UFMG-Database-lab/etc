@@ -242,13 +242,16 @@ from copy import deepcopy
 etc_imb_smote = deepcopy(etc_imb)
 etc_imb_smote['init_params']['tname'] = 'ETC-SMOTE'
 etc_imb_smote['init_params']['descriptor']['init_params']['tknz']['imbalancer'] = 'smote'
+etc_imb_smote['init_params']['descriptor']['init_params']['batch_size'] = 64
 
 etc_imb_ada = deepcopy(etc_imb)
 etc_imb_ada['init_params']['tname'] = 'ETC-ADASYN'
+etc_imb_ada['init_params']['descriptor']['init_params']['batch_size'] = 64
 etc_imb_ada['init_params']['descriptor']['init_params']['tknz']['imbalancer'] = 'adasyn'
 
 etc_imb_rand = deepcopy(etc_imb)
 etc_imb_rand['init_params']['tname'] = 'ETC-Random'
+etc_imb_rand['init_params']['descriptor']['init_params']['batch_size'] = 64
 etc_imb_rand['init_params']['descriptor']['init_params']['tknz']['imbalancer'] = 'random'
 
 pte = {
