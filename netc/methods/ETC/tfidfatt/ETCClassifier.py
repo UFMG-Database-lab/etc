@@ -150,7 +150,7 @@ class ETCClassifier(BaseEstimator):
                 data = { k: v.to(self.device) for (k,v) in data.items() }
                 result = self.model( **data )
                 y_preds.extend(result['logits'].argmax(axis=-1).long().cpu().tolist())
-        return self.tknz.le.inferse_transform(y_preds) 
+        return self.tknz.le.inverse_transform(y_preds) 
 
 
     # implement a BatchNorm1dCDF class cdf of Normal distribution (torch.nn.distributions.Normal) considering the running_mean and running_var and as registered buffer
