@@ -60,9 +60,9 @@ class ImbalancedTokenizer(BaseEstimator, TransformerMixin):
     def _getFeatures(self, docs):
         docs = map(lambda d: list(sorted(d, key=lambda t: (math.sqrt(t[1])/math.log2(t[2]+2)), reverse=True)), docs)
         docs    = list(map(lambda doc: list(zip(*doc)), docs))
-        tids    = [ np.array(item[0])[:self.max_size] if len(item) > 0 else np.array([]) for item in docs ]
-        TF      = [ np.array(item[1])[:self.max_size] if len(item) > 0 else np.array([]) for item in docs ]
-        DF      = [ np.array(item[2])[:self.max_size] if len(item) > 0 else np.array([]) for item in docs ]
+        tids    = [ np.array(item[0])[:self.max_size] if len(item) > 0 else np.array([0]) for item in docs ]
+        TF      = [ np.array(item[1])[:self.max_size] if len(item) > 0 else np.array([0]) for item in docs ]
+        DF      = [ np.array(item[2])[:self.max_size] if len(item) > 0 else np.array([0]) for item in docs ]
         return tids, TF, DF
     def _toTorch(self, tids, TFs, DFs):
         tids = pad_sequence(list(map(torch.LongTensor, tids)), batch_first=True, padding_value=0)
