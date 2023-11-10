@@ -1,5 +1,6 @@
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.preprocessing import LabelEncoder
 from scipy.sparse import csr_matrix
 import torch
 from tqdm.auto import tqdm
@@ -9,9 +10,11 @@ from torch.nn.utils.rnn import  pad_sequence
 from multiprocessing import cpu_count
 from imblearn.over_sampling import SMOTE, ADASYN, RandomOverSampler
 
+
 class ImbalancedTokenizer(BaseEstimator, TransformerMixin):
     def __init__(self, imbalancer:str='random', with_CLS=False, **kargs):
         self.with_CLS   = with_CLS
+        self.le = LabelEncoder()
         self.vectorizer = CountVectorizer(**kargs)
         if imbalancer is None:
             self.oversampler = None
@@ -26,7 +29,8 @@ class ImbalancedTokenizer(BaseEstimator, TransformerMixin):
     def fit(self, X, y):
         X_data = self.vectorizer.fit_transform(X)
         self.V = X_data.shape[1]+1+int(self.with_CLS)    # {<PAD>: 0, <CLS>: 1, ...} 
-        self.L = len(set(y))
+        y = self.le.fit_transform(y)
+        self.L = len(self.le.classes_)
         self._computeDF(X_data)
         if self.oversampler is not None:
             ext_X, self.ext_y = self.oversampler.fit_resample(X_data, y)
@@ -82,7 +86,7 @@ class ImbalancedTokenizer(BaseEstimator, TransformerMixin):
     def collate_val(self, params):
         docs, y = list(zip(*params))
         result = self.collate(docs)
-        result['labels'] = torch.LongTensor( y )
+        result['labels'] = torch.LongTensor( self.le.transform(y) )
         return result
     def collate(self, X):
         docs = self.transform(X)
