@@ -141,7 +141,7 @@ etc_desc = {
                                     'stopwordsSet': 'both',
                                     'model': 'topk',
                                     'oversample': False, 
-                                    'vocab_max_size': 1000000,
+                                    'vocab_max_size': 750000,
                                     'ngram_range': (1,2),
                                     'verbose': True
                                 },
@@ -212,7 +212,7 @@ etc_imb = {
                         'init_params': {
                             'tknz': { 
                                 'min_df': 2,
-                                'max_features': 750_000,
+                                'max_features': 500_000,
                                 'stop_words': stopwordsSet,
                                 'ngram_range': (1,2),
                                 'with_CLS': False,
@@ -227,7 +227,7 @@ etc_imb = {
                                 'norep': 2
                             },
                             'device': 'cuda',
-                            'batch_size': 16,
+                            'batch_size': 8,
                             'nepochs': 50,
                             'lr': 5e-3,
                             'weight_decay': 5e-3,
@@ -242,16 +242,16 @@ from copy import deepcopy
 etc_imb_smote = deepcopy(etc_imb)
 etc_imb_smote['init_params']['tname'] = 'ETC-SMOTE'
 etc_imb_smote['init_params']['descriptor']['init_params']['tknz']['imbalancer'] = 'smote'
-etc_imb_smote['init_params']['descriptor']['init_params']['batch_size'] = 64
+#etc_imb_smote['init_params']['descriptor']['init_params']['batch_size'] = 16
 
 etc_imb_ada = deepcopy(etc_imb)
 etc_imb_ada['init_params']['tname'] = 'ETC-ADASYN'
-etc_imb_ada['init_params']['descriptor']['init_params']['batch_size'] = 64
+#etc_imb_ada['init_params']['descriptor']['init_params']['batch_size'] = 16
 etc_imb_ada['init_params']['descriptor']['init_params']['tknz']['imbalancer'] = 'adasyn'
 
 etc_imb_rand = deepcopy(etc_imb)
 etc_imb_rand['init_params']['tname'] = 'ETC-Random'
-etc_imb_rand['init_params']['descriptor']['init_params']['batch_size'] = 64
+#etc_imb_rand['init_params']['descriptor']['init_params']['batch_size'] = 16
 etc_imb_rand['init_params']['descriptor']['init_params']['tknz']['imbalancer'] = 'random'
 
 pte = {
