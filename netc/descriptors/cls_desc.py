@@ -206,7 +206,7 @@ stopwordsSet += list(set(stop_words))
 
 setc_imb = {
     'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
-    'init_params': { 'tname': 'ETC-Imb',
+    'init_params': { 'tname': 'sim-ETC',
                      'descriptor': {
                         'classpath': 'netc.methods.ETC.tfidfatt.ETCClassifier.ETCClassifier',
                         'init_params': {
@@ -239,7 +239,7 @@ setc_imb = {
 }
 detc_imb = {
     'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
-    'init_params': { 'tname': 'ETC-Imb',
+    'init_params': { 'tname': 'drop-ETC',
                      'descriptor': {
                         'classpath': 'netc.methods.ETC.tfidfatt.ETCClassifier.ETCClassifier',
                         'init_params': {
