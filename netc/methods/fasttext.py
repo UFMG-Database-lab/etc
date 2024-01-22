@@ -21,7 +21,7 @@ TMP_IN_TRAIN_FILE = '/tmp/train_fasttext_in'
 class FastTextSKL(BaseEstimator, TransformerMixin, ClassifierMixin):
     def __init__(self, model='skipgram', lr=0.05, dim=300, ws=5, epoch=5,
                 minCount=5, minn=3, maxn=6, neg=5, minCountLabel=0,
-                wordNgrams=1, loss='ns', bucket=2000000,
+                wordNgrams=2, loss='ns', bucket=2000000,
                 n_jobs=cpu_count(), lrUpdateRate=100, t=0.0001, verbose=True ):
         self.lrUpdateRate=lrUpdateRate
         self.dim=dim
