@@ -3,25 +3,28 @@ from sklearn.base import BaseEstimator, TransformerMixin, ClassifierMixin
 import numpy as np
 from multiprocessing import cpu_count
 from fasttext import train_supervised
+from tqdm.auto import tqdm
 
 def save_file(filename, content):
     with open(filename, 'w') as filout:
-        for line in content:
+        for line in tqdm(content):
             filout.write(line + '\n')
 
 from unicodedata import normalize as UNI_NORMALIZE
 def filter_text(doc):
     doc = UNI_NORMALIZE('NFC', doc)
     doc = doc.lower()
-    for c in ["'",'"',".",",",":","!","#","?","$","%","^","&","*","(",")", "\n"]: # Unefficient way V0
+    for c in ["'",'"',".",",",":","!","#","?","$","%","^","&","*","(",")", " ", "\n"]: # Unefficient way V0
         doc = doc.replace(c, ' ')
+    #doc = ''.join([d if d.isalnum() else '' for d in doc])
+    doc = ' '.join([t for t in doc.strip().split() if len(t)])
     return doc
     
 TMP_IN_TRAIN_FILE = '/tmp/train_fasttext_in'
 class FastTextSKL(BaseEstimator, TransformerMixin, ClassifierMixin):
-    def __init__(self, model='skipgram', lr=0.05, dim=300, ws=5, epoch=5,
-                minCount=5, minn=3, maxn=6, neg=5, minCountLabel=0,
-                wordNgrams=2, loss='ns', bucket=2000000,
+    def __init__(self, lr=0.1, dim=300, ws=5, epoch=15,
+                minCount=1, minn=0, maxn=0, neg=5, minCountLabel=1,
+                wordNgrams=2, loss='softmax', bucket=2000000,
                 n_jobs=cpu_count(), lrUpdateRate=100, t=0.0001, verbose=True ):
         self.lrUpdateRate=lrUpdateRate
         self.dim=dim
@@ -54,7 +57,7 @@ class FastTextSKL(BaseEstimator, TransformerMixin, ClassifierMixin):
         result = map(filter_text, X)
 
         if y is not None:
-            result = map(' '.join, zip( map(lambda l: "__label__"+str(l), y), result ))
+            result = map('\t'.join, zip( map(lambda l: "__label__"+str(l), y), result ))
 
         save_file(TMP_IN_TRAIN_FILE+self.key, result)
 
