@@ -22,7 +22,7 @@ def filter_text(doc):
     
 TMP_IN_TRAIN_FILE = '/tmp/train_fasttext_in'
 class FastTextSKL(BaseEstimator, TransformerMixin, ClassifierMixin):
-    def __init__(self, lr=0.1, dim=300, ws=5, epoch=15,
+    def __init__(self, lr=0.05, dim=300, ws=5, epoch=50,
                 minCount=1, minn=0, maxn=0, neg=5, minCountLabel=1,
                 wordNgrams=2, loss='softmax', bucket=2000000,
                 n_jobs=cpu_count(), lrUpdateRate=100, t=0.0001, verbose=True ):
