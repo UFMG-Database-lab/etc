@@ -217,23 +217,23 @@ etc_imb = {
 
 setc_imb = deepcopy(etc_imb)
 setc_imb['init_params']['tname'] = 'sim-ETC'
-setc_imb['init_params']['init_params']['model']['sim_func'] = 'sim'
+setc_imb['init_params']['descriptor']['init_params']['model']['sim_func'] = 'sim'
 
 detc_imb = deepcopy(etc_imb)
 detc_imb['init_params']['tname'] = 'drop-ETC'
-detc_imb['init_params']['init_params']['max_drop'] = .25
+detc_imb['init_params']['descriptor']['init_params']['max_drop'] = .25
 
 self_etc = deepcopy(etc_imb)
 self_etc['init_params']['tname'] = 'SelfAtt-ETC'
-self_etc['init_params']['init_params']['model']['att_model'] = 'sa'
+self_etc['init_params']['descriptor']['init_params']['model']['att_model'] = 'sa'
 
 cross_etc = deepcopy(etc_imb)
 cross_etc['init_params']['tname'] = 'CrossAtt-ETC'
-cross_etc['init_params']['init_params']['model']['att_model'] = 'ca'
+cross_etc['init_params']['descriptor']['init_params']['model']['att_model'] = 'ca'
 
 doc_etc = deepcopy(etc_imb)
 doc_etc['init_params']['tname'] = 'ETC-WithDocRepr'
-doc_etc['init_params']['init_params']['tknz']['with_CLS'] = True
+doc_etc['init_params']['descriptor']['init_params']['tknz']['with_CLS'] = True
 
 etc_imb_smote = deepcopy(etc_imb)
 etc_imb_smote['init_params']['tname'] = 'ETC-SMOTE'
