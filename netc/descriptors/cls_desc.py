@@ -327,6 +327,7 @@ DESC_CLS = {
     'etc-imb-smote': etc_imb_smote,
 
     'setc': setc_imb,
+    'detc': detc_imb,
     'cetc': cross_etc,
     'self_etc': self_etc,
     'doc_etc': doc_etc,
