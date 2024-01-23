@@ -1,4 +1,9 @@
-
+import numpy as np
+from copy import deepcopy
+from nltk.corpus import stopwords as stopwords_by_lang
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS as stop_words
+stopwordsSet  = list(set(stopwords_by_lang.words('english')))
+stopwordsSet += list(set(stop_words))
 
 svm_desc = {
     'classpath': 'sklearn.svm.SVC',
@@ -73,7 +78,6 @@ bert = {
                                     }
                     }
 }
-import numpy as np
 gridtfidfsvm = {
     'classpath': 'netc.trainers.skl_trainers.CVSklTrainer',
     'init_params': {
@@ -88,29 +92,7 @@ gridtfidfsvm = {
                             'svc__C': 2.0 ** np.arange(-5, 10, 2),
                         },
                         'gridparams': {
-                            'cv': 3,
-                            'n_jobs': -1,
-                            'verbose': 4
-                        }
-                    },
-        },
-}
-
-gridftfidfsvm = {
-    'classpath': 'netc.trainers.skl_trainers.CVSklTrainer',
-    'init_params': {
-        'tname': 'grid-FTFIDF+SVM',
-        'descriptor': { 'skmodel': { 
-                                    'type': 'skl-pipe',
-                                    'pipeline': [ ftfidf_desc, svm_desc ]
-                        },
-                        'hyperparams': {
-                            'tfidfrepresentation__min_df': [1,2,4],
-                            'tfidfrepresentation__ngram_range': [(1,1),(1,2)],
-                            'svc__C': 2.0 ** np.arange(-5, 10, 2),
-                        },
-                        'gridparams': {
-                            'cv': 3,
+                            'cv': 5,
                             'n_jobs': -1,
                             'verbose': 4
                         }
@@ -199,77 +181,6 @@ tfidfatt = {
 
 }
 
-from nltk.corpus import stopwords as stopwords_by_lang
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS as stop_words
-stopwordsSet  = list(set(stopwords_by_lang.words('english')))
-stopwordsSet += list(set(stop_words))
-
-setc_imb = {
-    'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
-    'init_params': { 'tname': 'sim-ETC',
-                     'descriptor': {
-                        'classpath': 'netc.methods.ETC.tfidfatt.ETCClassifier.ETCClassifier',
-                        'init_params': {
-                            'tknz': { 
-                                'min_df': 2,
-                                'max_features': 500_000,
-                                'stop_words': stopwordsSet,
-                                'ngram_range': (1,2),
-                                'with_CLS': False,
-                                'imbalancer': None
-                            },
-                            'model': { 
-                                "gamma": 5.,
-                                "hiddens": 300,
-                                'nheads': 12,
-                                'att_model': 'aa',
-                                'sim_func': 'sim',
-                                'norep': 2
-                            },
-                            'device': 'cuda',
-                            'batch_size': 8,
-                            'nepochs': 50,
-                            'lr': 5e-3,
-                            'weight_decay': 5e-3,
-                            'max_drop': .75
-                         }
-                      }
-                    }
-
-}
-detc_imb = {
-    'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
-    'init_params': { 'tname': 'drop-ETC',
-                     'descriptor': {
-                        'classpath': 'netc.methods.ETC.tfidfatt.ETCClassifier.ETCClassifier',
-                        'init_params': {
-                            'tknz': { 
-                                'min_df': 2,
-                                'max_features': 500_000,
-                                'stop_words': stopwordsSet,
-                                'ngram_range': (1,2),
-                                'with_CLS': False,
-                                'imbalancer': None
-                            },
-                            'model': { 
-                                "gamma": 5.,
-                                "hiddens": 300,
-                                'nheads': 12,
-                                'att_model': 'aa',
-                                'sim_func': 'dist',
-                                'norep': 2
-                            },
-                            'device': 'cuda',
-                            'batch_size': 8,
-                            'nepochs': 50,
-                            'lr': 5e-3,
-                            'weight_decay': 5e-3,
-                            'max_drop': .25
-                         }
-                      }
-                    }
-
-}
 etc_imb = {
     'classpath': 'netc.trainers.ETC_trainer.TrainerETC',
     'init_params': { 'tname': 'ETC-Imb',
@@ -303,7 +214,26 @@ etc_imb = {
                     }
 
 }
-from copy import deepcopy
+
+setc_imb = deepcopy(etc_imb)
+setc_imb['init_params']['tname'] = 'sim-ETC'
+setc_imb['init_params']['init_params']['model']['sim_func'] = 'sim'
+
+detc_imb = deepcopy(etc_imb)
+detc_imb['init_params']['tname'] = 'drop-ETC'
+detc_imb['init_params']['init_params']['max_drop'] = .25
+
+self_etc = deepcopy(etc_imb)
+self_etc['init_params']['tname'] = 'SelfAtt-ETC'
+self_etc['init_params']['init_params']['model']['att_model'] = 'sa'
+
+cross_etc = deepcopy(etc_imb)
+cross_etc['init_params']['tname'] = 'CrossAtt-ETC'
+cross_etc['init_params']['init_params']['model']['att_model'] = 'ca'
+
+doc_etc = deepcopy(etc_imb)
+doc_etc['init_params']['tname'] = 'ETC-WithDocRepr'
+doc_etc['init_params']['init_params']['tknz']['with_CLS'] = True
 
 etc_imb_smote = deepcopy(etc_imb)
 etc_imb_smote['init_params']['tname'] = 'ETC-SMOTE'
@@ -383,16 +313,13 @@ distilbert_hugg['init_params']['tname'] = 'distilbert-hugg-base'
 distilbert_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'distilbert'
 
 DESC_CLS = {
-    'gridftfidfsvm': gridftfidfsvm,
     'gridtfidfsvm': gridtfidfsvm, 
     'tfidfsvm': tfidfsvm, 
     'bert': bert,
     'pte': pte,
-    'etc': etc_desc,
     'fasttext': fasttext,
     'bert-tiny': bert_tiny,
     'bert-skl': bert_skl_desc,
-    'tfidfatt': tfidfatt,
 
     'etc-imb': etc_imb,
     'etc-imb-ada': etc_imb_ada,
@@ -400,7 +327,9 @@ DESC_CLS = {
     'etc-imb-smote': etc_imb_smote,
 
     'setc': setc_imb,
-    'detc': detc_imb,
+    'cetc': cross_etc,
+    'self_etc': self_etc,
+    'doc_etc': doc_etc,
 
     "hbert": bert_hugg,
     "halbert": albert_hugg,
