@@ -57,6 +57,8 @@ class ETCClassifier(BaseEstimator):
         dl_val = DataLoader(list(zip(X_val, y_val)), batch_size=self.batch_size,
                                 shuffle=False, collate_fn=self.tknz.collate_val)
         N_train = len(self.tknz.ext_y)
+
+        logging_ = []
         with tqdm(total=self.nepochs, position=3, desc="First epoch") as e_pbar:
             with tqdm(total=N_train+len(y_val), position=4, smoothing=0., desc=f"First batch") as b_pbar:
                 for e in range(self.nepochs):
@@ -123,6 +125,7 @@ class ETCClassifier(BaseEstimator):
                     f1_ma  = f1_score(y_true, y_preds, average='macro')
                     f1_mi  = f1_score(y_true, y_preds, average='micro')
                     metric = (loss_val/(i+1)) / ( f1_ma + f1_mi )
+                    logging_.append({'f1_mi': f1_mi, 'f1_ma': f1_ma, 'loss_val': loss_val/(i+1), 'metric': metric})
                     self.scheduler.step(loss_val)
 
                     if best-metric > 0.0001:
@@ -139,7 +142,7 @@ class ETCClassifier(BaseEstimator):
                     e_pbar.update(1)
                     b_pbar.update(-(N_train+len(y_val)))
         self.model = best_model.to(self.device)
-        return {'f1_mi': f1_mi, 'f1_ma': f1_ma, 'loss_val': loss_val/(i+1), 'metric': metric}
+        return logging_
         
     def predict(self, X):
         dl_test = DataLoader(X, batch_size=self.batch_size*2, shuffle=False, collate_fn=self.tknz.collate)
