@@ -70,10 +70,10 @@ MODEL_CLASSES = {
 }
 
 SPECIFIC_MODEL = {
-	'bert-base': 'bert-base-cased',
+	'bert-base': 'bert-base-uncased',
 	'xlnet-base': 'xlnet-base-cased',
 	'roberta-base': 'roberta-base',
-	'distilbert-base': 'distilbert-base-cased',
+	'distilbert-base': 'distilbert-base-uncased',
 	'albert-base': 'albert-base-v2',
 	
 	'xlnet-large': 'xlnet-large-cased',
@@ -148,7 +148,7 @@ class DeepClassifier(BaseEstimator, ClassifierMixin):
 			max_grad_norm: float = 1.0, 
 			full_finetuning: bool = True, 
 			verbose: bool = True, 
-			weight_decay_rate: float = 0.01, 
+			weight_decay_rate: float = 0.0, 
 			learning_rate: float = 5e-5, 
 			max_patience: int = 5, 
 			max_iter: int = 20, 
@@ -257,6 +257,8 @@ class DeepClassifier(BaseEstimator, ClassifierMixin):
 		if not X_val:
 
 			X_train, y_train, X_val, y_val = prep_data(X_train, y_train)
+
+		print(f'tokenizing documents...')
 
 		train_encodings = self.tokenizer(X_train, truncation=True, padding='max_length', max_length=self.max_len)
 		val_encodings = self.tokenizer(X_val, truncation=True, padding='max_length', max_length=self.max_len)
