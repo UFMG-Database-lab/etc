@@ -288,7 +288,7 @@ transf_hugging = {
     'init_params': { 'tname': 'HF-',
                      'descriptor': { 
                          'model_name': None,
-                         'batch_size': 64,
+                         'batch_size': 32,
                          'max_length': 256,
                          'epochs': 5,
                          'learning_rate': 5e-5
