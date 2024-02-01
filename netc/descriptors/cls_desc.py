@@ -283,7 +283,50 @@ fasttext = {
     
 }
 
-transf_hugg = {
+transf_hugging = {
+    'classpath': 'netc.trainers.hug_trainers.HuggTrainer',
+    'init_params': { 'tname': 'HF-',
+                     'descriptor': { 
+                         'model_name': None,
+                         'batch_size': 64,
+                         'max_length': 256,
+                         'epochs': 5,
+                         'learning_rate': 5e-5
+                     }
+                    }
+
+}
+
+
+
+mbert_hugg = deepcopy(transf_hugging)
+mbert_hugg['init_params']['tname'] += 'bert-mini'
+mbert_hugg['init_params']['descriptor']['model_name'] = 'prajjwal1/bert-mini'
+mbert_hugg['init_params']['descriptor']['epochs'] = 1
+
+bert_hugg = deepcopy(transf_hugging)
+bert_hugg['init_params']['tname'] += 'bert'
+bert_hugg['init_params']['descriptor']['model_name'] = 'bert-base-uncased'
+
+albert_hugg = deepcopy(transf_hugging)
+albert_hugg['init_params']['tname'] += 'albert'
+albert_hugg['init_params']['descriptor']['model_name'] = 'albert-base-v2'
+
+roberta_hugg = deepcopy(transf_hugging)
+roberta_hugg['init_params']['tname'] += 'roberta'
+roberta_hugg['init_params']['descriptor']['model_name'] = 'roberta-base'
+
+xlnet_hugg = deepcopy(transf_hugging)
+xlnet_hugg['init_params']['tname'] += 'xlnet'
+xlnet_hugg['init_params']['descriptor']['model_name'] = 'xlnet-base-cased'
+
+distilbert_hugg = deepcopy(transf_hugging)
+distilbert_hugg['init_params']['tname'] += 'distilbert'
+distilbert_hugg['init_params']['descriptor']['model_name'] = 'distilbert-base-uncased'
+
+
+
+"""transf_hugg = {
     'classpath': 'netc.trainers.skl_trainers.SklTrainer',
     'init_params': { 'tname': 'hugging',
                      'descriptor': { 
@@ -310,7 +353,7 @@ xlnet_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'xlnet'
 
 distilbert_hugg = deepcopy(transf_hugg)
 distilbert_hugg['init_params']['tname'] = 'distilbert-hugg-base'
-distilbert_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'distilbert'
+distilbert_hugg['init_params']['descriptor']['init_params']["deepmethod"] = 'distilbert'"""
 
 DESC_CLS = {
     'gridtfidfsvm': gridtfidfsvm, 
@@ -332,6 +375,7 @@ DESC_CLS = {
     'self_etc': self_etc,
     'doc_etc': doc_etc,
 
+    "hmbert": mbert_hugg,
     "hbert": bert_hugg,
     "halbert": albert_hugg,
     "hroberta": roberta_hugg,

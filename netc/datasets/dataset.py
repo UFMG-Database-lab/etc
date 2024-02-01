@@ -49,9 +49,9 @@ class Fold(object):
             from .conversors import HugDataset
             from datasets import DatasetDict
             tokenizer = kargs['tokenizer'] if 'tokenizer' in kargs else None
-            return DatasetDict(train=HugDataset(self.X_train, self.y_train, tokenizer),
-                       val=HugDataset(self.X_val, self.y_val, tokenizer),
-                       test=HugDataset(self.X_test, self.y_test, tokenizer))
+            return DatasetDict(train=HugDataset(self.X_train, y=self.y_train, tokenizer=tokenizer),
+                       val=HugDataset(self.X_val, y=self.y_val, tokenizer=tokenizer),
+                       test=HugDataset(self.X_test, y=self.y_test, tokenizer=tokenizer))
         raise Exception(f'Format {format} not found. Options: [etc, hugging]')
 class Dataset(object):
     def __init__(self, dname, nfold=10,
