@@ -1,5 +1,6 @@
 from os import path
 from ..utils.base import create_path, read_lines, download
+from sklearn.preprocessing import LabelEncoder
 
 class Fold(object):
     def __init__(self, dname, foldname, content, labels, nclass, train_idxs, test_idxs, fidx=0, val_idxs=[]):
@@ -14,6 +15,7 @@ class Fold(object):
         self.train_idxs = train_idxs
         self.val_idxs = val_idxs
         self.test_idxs = test_idxs
+        self.le = LabelEncoder()
         self.with_val = len(val_idxs) > 0
         self.n = (len(train_idxs), len(val_idxs), len(test_idxs)) if self.with_val else (len(train_idxs), len(test_idxs))
 
@@ -80,6 +82,7 @@ class Dataset(object):
         self.texts  = read_lines(tpath)
         self.y      = read_lines(lpath)
         self.y      = list(map(int, self.y))
+        self.y      = self.le.fit_transform(self.y)
         self.nclass = len(set(self.y))
         self.N      = len(self.y)
         self.splits = dict()
