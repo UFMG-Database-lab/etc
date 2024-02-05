@@ -15,7 +15,6 @@ class Fold(object):
         self.train_idxs = train_idxs
         self.val_idxs = val_idxs
         self.test_idxs = test_idxs
-        self.le = LabelEncoder()
         self.with_val = len(val_idxs) > 0
         self.n = (len(train_idxs), len(val_idxs), len(test_idxs)) if self.with_val else (len(train_idxs), len(test_idxs))
 
@@ -62,6 +61,7 @@ class Dataset(object):
         self.dname = dname
         self.nfold = nfold
         self.drepo = drepo + f"datasets/{self.dname}"
+        self.le = LabelEncoder()
         self.dpath = path.abspath(path.join(path.expanduser(dpath), "datasets", self.dname))
         self.init_dataset()
     
