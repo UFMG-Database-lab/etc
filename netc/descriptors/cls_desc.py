@@ -215,6 +215,18 @@ etc_imb = {
 
 }
 
+stp_etc = deepcopy(etc_imb)
+stp_etc['init_params']['tname'] = 'ETC-not-stpw'
+stp_etc['init_params']['descriptor']['init_params']['tknz']['stop_words'] = None
+
+b32_etc = deepcopy(etc_imb)
+b32_etc['init_params']['tname'] = 'ETC-b32'
+b32_etc['init_params']['descriptor']['init_params']['batch_size'] = 32
+
+b64_etc = deepcopy(etc_imb)
+b64_etc['init_params']['tname'] = 'ETC-b64'
+b64_etc['init_params']['descriptor']['init_params']['batch_size'] = 64
+
 setc_imb = deepcopy(etc_imb)
 setc_imb['init_params']['tname'] = 'sim-ETC'
 setc_imb['init_params']['descriptor']['init_params']['model']['sim_func'] = 'sim'
@@ -374,6 +386,9 @@ DESC_CLS = {
     'cetc': cross_etc,
     'self_etc': self_etc,
     'doc_etc': doc_etc,
+    'b32_etc': b32_etc,
+    'b64_etc': b64_etc,
+    'stpw_etc': stp_etc,
 
     "hmbert": mbert_hugg,
     "hbert": bert_hugg,
