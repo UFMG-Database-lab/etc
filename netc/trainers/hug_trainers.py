@@ -36,6 +36,8 @@ class HuggTrainer(Trainect):
         self.training_args = TrainingArguments(
             output_dir=output_dir,
             num_train_epochs=self.epochs,
+            save_steps=.25,
+            save_strategy='steps',
             save_total_limit=1,
             load_best_model_at_end=True,
             per_device_train_batch_size=self.batch_size,
