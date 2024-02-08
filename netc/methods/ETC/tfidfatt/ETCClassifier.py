@@ -145,13 +145,13 @@ class ETCClassifier(BaseEstimator):
         return logging_
         
     def predict(self, X):
-        dl_test = DataLoader(X, batch_size=self.batch_size*2, shuffle=False, collate_fn=self.tknz.collate)
-        self.model.eval()
+        dl_test = DataLoader(X, batch_size=self.batch_size, shuffle=False, collate_fn=self.tknz.collate)
+        model = self.model.eval()
         y_preds = []
         with torch.no_grad():
             for i, data in tqdm(enumerate(dl_test)):
                 data = { k: v.to(self.device) for (k,v) in data.items() }
-                result = self.model( **data )
+                result = model( **data )
                 y_preds.extend(result['logits'].argmax(axis=-1).long().cpu().tolist())
         return self.tknz.le.inverse_transform(y_preds) 
 

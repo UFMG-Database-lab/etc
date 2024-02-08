@@ -11,6 +11,8 @@ DESC_DST = {
     '20ng': { "nfold": 10, "dname": "20ng" } ,
     'reut90': { "nfold": 10, "dname": "reut90" },
     'acm': {  "nfold": 10, "dname": "acm" },
+    'patents': {  "nfold": 10, "dname": "patents" },
+    'arxiv': {  "nfold": 10, "dname": "arxiv" },
 
     'ohsumed': {  "nfold": 10, "dname": "ohsumed" },
     'wos11967': { "nfold":10, "dname": "wos11967" },

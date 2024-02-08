@@ -205,7 +205,7 @@ etc_imb = {
                             },
                             'device': 'cuda',
                             'batch_size': 8,
-                            'nepochs': 50,
+                            'nepochs': 50, 
                             'lr': 5e-3,
                             'weight_decay': 5e-3,
                             'max_drop': .75
@@ -214,6 +214,11 @@ etc_imb = {
                     }
 
 }
+
+drst_etc = deepcopy(etc_imb)
+drst_etc['init_params']['tname'] = 'ETC-drastic'
+drst_etc['init_params']['descriptor']['init_params']['model']['nheads'] = 100
+
 
 stp_etc = deepcopy(etc_imb)
 stp_etc['init_params']['tname'] = 'ETC-not-stpw'
@@ -389,6 +394,7 @@ DESC_CLS = {
     'b32_etc': b32_etc,
     'b64_etc': b64_etc,
     'stpw_etc': stp_etc,
+    'drst_etc': drst_etc,
 
     "hmbert": mbert_hugg,
     "hbert": bert_hugg,
