@@ -15,6 +15,8 @@ class ImbalancedTokenizer(BaseEstimator, TransformerMixin):
     def __init__(self, imbalancer:str='random', with_CLS=False, **kargs):
         self.with_CLS   = with_CLS
         self.le = LabelEncoder()
+        self.kargs = kargs
+        self.imbalancer = imbalancer
         self.vectorizer = CountVectorizer(**kargs)
         if imbalancer is None:
             self.oversampler = None
