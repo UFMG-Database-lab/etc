@@ -28,14 +28,14 @@ def seed_everything(seed: int):
     torch.backends.cudnn.benchmark = True
 
 class ETCClassifier(BaseEstimator):
-    def __init__(self, tknz, transfom_conf, model=None, nepochs:int=50,
+    def __init__(self, tknz, model=None, nepochs:int=50,
                 max_drop:float=.75, batch_size:int=16, min_f1=.97, seed=42, 
                 weight_decay:float = 5e-3, lr:float = 5e-3, device='cuda'):
         super(ETCClassifier, self).__init__()
         seed_everything(seed)
         self.seed          = seed
         self.model         = model
-        self.transfom_conf = transfom_conf
+        self.transfom_conf = model
         self.tknz          = tknz
         self.min_f1        = min_f1
         self.device        = device
