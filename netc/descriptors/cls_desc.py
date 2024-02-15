@@ -220,6 +220,10 @@ drst_etc['init_params']['tname'] = 'ETC-drastic'
 drst_etc['init_params']['descriptor']['init_params']['model']['nheads'] = 100
 
 
+ce_etc = deepcopy(etc_imb)
+ce_etc['init_params']['tname'] = 'ETC-CE'
+ce_etc['init_params']['descriptor']['init_params']['model']['gamma'] = 0.
+
 stp_etc = deepcopy(etc_imb)
 stp_etc['init_params']['tname'] = 'ETC-not-stpw'
 stp_etc['init_params']['descriptor']['init_params']['tknz']['stop_words'] = None
@@ -395,6 +399,7 @@ DESC_CLS = {
     'b64_etc': b64_etc,
     'stpw_etc': stp_etc,
     'drst_etc': drst_etc,
+    'ce_etc': ce_etc,
 
     "hmbert": mbert_hugg,
     "hbert": bert_hugg,
